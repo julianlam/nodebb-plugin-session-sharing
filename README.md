@@ -4,7 +4,7 @@ A starter kit for quickly creating NodeBB plugins. Comes with a pre-setup LESS f
 
 Fork this or copy it, and using your favourite text editor find and replace all instances of `nodebb-plugin-quickstart` with `nodebb-plugin-your-plugins-name`. Change the author's name in the LICENSE and package.json files.
 
-Once you're done don't forget to publish it on NPM, and make a thread about it [here](https://community.nodebb.org/category/7/nodebb-plugins).
+Once you're done don't forget to publish it on NPM, and make a thread about it [here](https://docs.nodebb.org/en/latest/plugins/hooks.html).
 
 
 ## Hello World
