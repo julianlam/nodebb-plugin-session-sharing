@@ -1,0 +1,21 @@
+{
+	"id": "nodebb-plugin-quickstart",
+	"name": "Quickstart Plugin for NodeBB",
+	"description": "A starter kit for quickly creating NodeBB plugins",
+	"url": "https://github.com/NodeBB/nodebb-plugin-quickstart",
+	"library": "./library.js",
+	"hooks": [
+		{
+			"hook": "action:app.load", "method": "init", "priority": 5
+		}
+	],
+	"staticDirs": {
+		"static": "./static"
+	},
+	"less": [
+		"static/style.less"
+	],
+	"scripts": [
+		"static/lib/main.js"
+	]
+}
