@@ -1,22 +1,34 @@
-<h1>Sample Admin Page</h1>
-<hr />
-
-<form role="form" class="quickstart-settings">
-	<p>
-		Adjust these settings. You can then retrieve these settings in code via:
-		<code>meta.config['sample:setting1']</code> and <code>meta.config['sample:setting2']</code>
-	</p><br />
-	<div class="alert alert-info">
-		<p>
-			<label for="Setting 1">Setting 1</label>
-			<input type="text" id="setting-1" name="setting-1" title="Setting 1" class="form-control" placeholder="Setting 1"><br />
-			<label for="Setting 2">Setting 2</label>
-			<input type="text" id="setting-2" name="setting-2" title="Setting 2" class="form-control" placeholder="Setting 2">
-		</p>
+<div class="row">
+	<div class="col-lg-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">Sample Admin Page</div>
+			<div class="panel-body">
+				<form role="form" class="quickstart-settings">
+					<p>
+						Adjust these settings. You can then retrieve these settings in code via:
+						<code>meta.config['sample:setting1']</code> and <code>meta.config['sample:setting2']</code>
+					</p><br />
+					<div class="alert alert-info">
+						<p>
+							<label for="Setting 1">Setting 1</label>
+							<input type="text" id="setting-1" name="setting-1" title="Setting 1" class="form-control" placeholder="Setting 1"><br />
+							<label for="Setting 2">Setting 2</label>
+							<input type="text" id="setting-2" name="setting-2" title="Setting 2" class="form-control" placeholder="Setting 2">
+						</p>
+					</div>
+				</form>
+			</div>
+		</div>
 	</div>
-</form>
-
-<button class="btn btn-lg btn-primary" id="save">Save</button>
+	<div class="col-lg-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">Control Panel</div>
+			<div class="panel-body">
+				<button class="btn btn-primary" id="save">Save Settings</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script>
 	require(['settings'], function(Settings) {
@@ -28,6 +40,10 @@
 					type: 'success',
 					alert_id: 'quickstart-saved',
 					title: 'Settings Saved',
+					message: 'Please reload your NodeBB to apply these settings',
+					clickfn: function() {
+						socket.emit('admin.reload');
+					}
 				})
 			});
 		});
