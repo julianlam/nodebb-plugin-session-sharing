@@ -2,9 +2,13 @@
 
 var plugin = {};
 
-plugin.init = function(app, middleware, controllers, callback) {
+plugin.init = function(params, callback) {
 	console.log('nodebb-plugin-quickstart: loaded');
 
+	var app = params.app,
+		middleware = params.middleware,
+		controllers = params.controllers;
+		
 	// We create two routes for every view. One API call, and the actual route itself.
 	// Just add the buildHeader middleware to your route and NodeBB will take care of everything for you.
 
