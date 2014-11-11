@@ -5,7 +5,7 @@ var plugin = {};
 plugin.init = function(params, callback) {
 	console.log('nodebb-plugin-quickstart: loaded');
 
-	var app = params.app,
+	var app = params.router,
 		middleware = params.middleware,
 		controllers = params.controllers;
 		
