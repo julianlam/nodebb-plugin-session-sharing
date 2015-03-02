@@ -31,6 +31,9 @@
 </div>
 
 <script>
+	'use strict';
+	/* globals $, app, socket, require */
+
 	require(['settings'], function(Settings) {
 		Settings.load('quickstart', $('.quickstart-settings'));
 
@@ -44,7 +47,7 @@
 					clickfn: function() {
 						socket.emit('admin.reload');
 					}
-				})
+				});
 			});
 		});
 	});
