@@ -1,7 +1,5 @@
 {
 	"id": "nodebb-plugin-quickstart",
-	"name": "Quickstart Plugin for NodeBB",
-	"description": "A starter kit for quickly creating NodeBB plugins",
 	"url": "https://github.com/NodeBB/nodebb-plugin-quickstart",
 	"library": "./library.js",
 	"hooks": [
@@ -19,7 +17,8 @@
 		"static/style.less"
 	],
 	"scripts": [
-		"static/lib/main.js"
+		"static/lib/main.js",
+		"static/lib/admin.js"
 	],
 	"templates": "static/templates"
 }

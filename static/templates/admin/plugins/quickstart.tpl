@@ -29,26 +29,3 @@
 		</div>
 	</div>
 </div>
-
-<script>
-	'use strict';
-	/* globals $, app, socket, require */
-
-	require(['settings'], function(Settings) {
-		Settings.load('quickstart', $('.quickstart-settings'));
-
-		$('#save').on('click', function() {
-			Settings.save('quickstart', $('.quickstart-settings'), function() {
-				app.alert({
-					type: 'success',
-					alert_id: 'quickstart-saved',
-					title: 'Settings Saved',
-					message: 'Please reload your NodeBB to apply these settings',
-					clickfn: function() {
-						socket.emit('admin.reload');
-					}
-				});
-			});
-		});
-	});
-</script>
