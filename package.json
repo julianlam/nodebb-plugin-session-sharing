@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/julianlam/nodebb-plugin-quickstart/issues"
   },
-  "readmeFilename": "README.md"
+  "readmeFilename": "README.md",
+  "nbbpm": {
+    "compatibility": "^0.6.0"
+  }
 }
