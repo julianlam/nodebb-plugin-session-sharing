@@ -1,25 +1,23 @@
 {
   "name": "nodebb-plugin-quickstart",
-  "version": "0.2.0",
-  "description": "A starter kit for quickly creating NodeBB plugins",
+  "version": "0.0.0",
+  "description": "",
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/psychobunny/nodebb-plugin-quickstart"
+    "url": "https://github.com/julianlam/nodebb-plugin-quickstart"
   },
   "keywords": [
     "nodebb",
-    "plugin",
-    "quickstart",
-    "shell"
+    "plugin"
   ],
   "author": {
-    "name": "psychobunny",
-    "email": "psycho.bunny@hotmail.com"
+    "name": "Julian Lam",
+    "email": "julian@nodebb.org"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/psychobunny/nodebb-plugin-quickstart/issues"
+    "url": "https://github.com/julianlam/nodebb-plugin-quickstart/issues"
   },
   "readmeFilename": "README.md"
 }

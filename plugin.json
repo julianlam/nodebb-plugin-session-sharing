@@ -3,12 +3,8 @@
 	"url": "https://github.com/NodeBB/nodebb-plugin-quickstart",
 	"library": "./library.js",
 	"hooks": [
-		{
-			"hook": "static:app.load", "method": "init"
-		},
-		{
-			"hook": "filter:admin.header.build", "method": "addAdminNavigation"
-		}
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" }
 	],
 	"staticDirs": {
 		"static": "./static"
