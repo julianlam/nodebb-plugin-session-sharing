@@ -6,7 +6,7 @@
 				<form role="form" class="quickstart-settings">
 					<p>
 						Adjust these settings. You can then retrieve these settings in code via:
-						<code>meta.config['sample:setting1']</code> and <code>meta.config['sample:setting2']</code>
+						<code>meta.settings.get('quickstart');</code>
 					</p>
 					<div class="form-group">
 						<label for="setting-1">Setting 1</label>
