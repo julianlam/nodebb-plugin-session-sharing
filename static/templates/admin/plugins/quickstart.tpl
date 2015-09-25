@@ -10,7 +10,7 @@
 					</p>
 					<div class="form-group">
 						<label for="setting-1">Setting 1</label>
-						<input type="text" id="setting-1" name="setting-1" title="Setting 1" class="form-control" placeholder="Setting 1"><br />
+						<input type="text" id="setting-1" name="setting-1" title="Setting 1" class="form-control" placeholder="Setting 1">
 					</div>
 					<div class="form-group">
 						<label for="setting-2">Setting 2</label>
