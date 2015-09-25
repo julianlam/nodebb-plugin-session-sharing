@@ -1,6 +1,7 @@
+'use strict';
+/* globals $, app, socket */
+
 define('admin/plugins/quickstart', ['settings'], function(Settings) {
-	'use strict';
-	/* globals $, app, socket, require */
 
 	var ACP = {};
 
