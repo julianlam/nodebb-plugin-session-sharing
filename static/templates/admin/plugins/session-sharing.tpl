@@ -53,6 +53,21 @@
 			</div>
 		</div>
 	</div>
+	<div class="row">
+		<div class="col-sm-2 col-xs-12 settings-header">Guest Handling</div>
+		<div class="col-sm-10 col-xs-12">
+			<div class="form-group">
+				<label for="guestRedirect">Re-direct unauthenticated sessions (guests) to this address</label>
+				<input type="text" id="guestRedirect" name="guestRedirect" class="form-control" placeholder="https://...">
+				<p class="help-block">
+					Blank value disables guest redirection.
+				</p>
+				<p class="help-block">
+					<code>%1</code> can be used as a placeholder for the link the user landed on (will be URL encoded)
+				</p>
+			</div>
+		</div>
+	</div>
 </form>
 
 <button id="save" class="floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">

@@ -99,7 +99,7 @@ plugin.addMiddleware = function(data, callback) {
 		) {
 			return next();
 		} else {
-			if (req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
+			if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 				return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
 					if (err) {
 						switch(err.message) {
@@ -122,9 +122,12 @@ plugin.addMiddleware = function(data, callback) {
 						next();
 					});
 				});
+			} else if (plugin.settings.guestRedirect) {
+				// If a guest redirect is specified, follow it
+				res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.path)));
+			} else {
+				next();
 			}
-
-			next();
 		}
 	});
 
