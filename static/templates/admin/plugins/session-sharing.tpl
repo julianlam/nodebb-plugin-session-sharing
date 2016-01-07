@@ -51,6 +51,17 @@
 			<div class="form-group">
 				<label for="payload:username">Username</label>
 				<input type="text" id="payload:username" name="payload:username" title="Username" class="form-control" placeholder="username">
+				<p class="help-block">
+					Supercedes first name / last name. If this is set, then the following two fields are ignored
+				</p>
+			</div>
+			<div class="form-group">
+				<label for="payload:firstName">First Name</label>
+				<input type="text" id="payload:firstName" name="payload:firstName" title="First Name" class="form-control" placeholder="firstName">
+			</div>
+			<div class="form-group">
+				<label for="payload:lastName">Last Name</label>
+				<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name" class="form-control" placeholder="lastName">
 			</div>
 			<div class="form-group">
 				<label for="payload:picture">Picture</label>

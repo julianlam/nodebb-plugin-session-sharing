@@ -22,7 +22,9 @@ var controllers = require('./lib/controllers'),
 			secret: '',
 			'payload:id': 'id',
 			'payload:email': 'email',
-			'payload:username': 'username',
+			'payload:username': undefined,
+			'payload:firstName': undefined,
+			'payload:lastName': undefined,
 			'payload:picture': 'picture',
 			'payload:parent': undefined
 		}
@@ -48,17 +50,18 @@ plugin.process = function(token, callback) {
 };
 
 plugin.verify = function(payload, callback) {
-	var ok = ['payload:id', 'payload:username'].every(function(key) {
-		// Verify the required keys exist in the payload, and that they are not null
-		var parent = plugin.settings['payload:parent'];
-		if (parent) {
-			return payload.hasOwnProperty(parent) && payload[parent].hasOwnProperty(plugin.settings[key]) && payload[parent][plugin.settings[key]].length;
-		} else {
-			return payload.hasOwnProperty(plugin.settings[key]) && payload[plugin.settings[key]].length;
+	var parent = plugin.settings['payload:parent'];
+	if (parent) {
+		if (!payload.hasOwnProperty(parent) || !payload[parent].hasOwnProperty(plugin.settings['payload:id']) || !payload[parent][plugin.settings['payload:id']].length) {
+			return callback(new Error('payload-invalid'));
 		}
-	});
+	} else {
+		if (!payload.hasOwnProperty(plugin.settings['payload:id']) || !payload[plugin.settings['payload:id']].length) {
+			return callback(new Error('payload-invalid'));
+		}
+	}
 
-	callback(!ok ? new Error('payload-invalid') : null, ok ? payload : undefined);
+	callback(null, payload);
 };
 
 plugin.findUser = function(payload, callback) {
@@ -69,7 +72,17 @@ plugin.findUser = function(payload, callback) {
 		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
 		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
 		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+
+	if (!username && firstName && lastName) {
+		username = [firstName, lastName].join(' ').trim();
+	} else if (!username && firstName && !lastName) {
+		username = firstName;
+	} else if (!username && !firstName && lastName) {
+		username = lastName;
+	}
 
 	async.parallel({
 		uid: async.apply(db.getObjectField, plugin.settings.name + ':uid', id),
@@ -90,7 +103,8 @@ plugin.findUser = function(payload, callback) {
 		user.create({
 			username: username,
 			email: email,
-			picture: picture
+			picture: picture,
+			fullname: [firstName, lastName].join(' ').trim()
 		}, function(err, uid) {
 			if (err) { return callback(err); }
 
