@@ -23,7 +23,8 @@ var controllers = require('./lib/controllers'),
 			'payload:id': 'id',
 			'payload:email': 'email',
 			'payload:username': 'username',
-			'payload:picture': 'picture'
+			'payload:picture': 'picture',
+			'payload:parent': undefined
 		}
 	};
 
@@ -49,7 +50,12 @@ plugin.process = function(token, callback) {
 plugin.verify = function(payload, callback) {
 	var ok = ['payload:id', 'payload:username'].every(function(key) {
 		// Verify the required keys exist in the payload, and that they are not null
-		return payload.hasOwnProperty(plugin.settings[key]) && payload[plugin.settings[key]].length;
+		var parent = plugin.settings['payload:parent'];
+		if (parent) {
+			return payload.hasOwnProperty(parent) && payload[parent].hasOwnProperty(plugin.settings[key]) && payload[parent][plugin.settings[key]].length;
+		} else {
+			return payload.hasOwnProperty(plugin.settings[key]) && payload[plugin.settings[key]].length;
+		}
 	});
 
 	callback(!ok ? new Error('payload-invalid') : null, ok ? payload : undefined);
@@ -59,30 +65,36 @@ plugin.findUser = function(payload, callback) {
 	// If payload id resolves to a user, return the uid, otherwise register a new user
 	winston.verbose('[session-sharing] Payload verified');
 
+	var parent = plugin.settings['payload:parent'],
+		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
+		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
+		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+
 	async.parallel({
-		uid: async.apply(db.getObjectField, plugin.settings.name + ':uid', payload[plugin.settings['payload:id']]),
-		mergeUid: async.apply(db.sortedSetScore, 'email:uid', payload[plugin.settings['payload:email']])
+		uid: async.apply(db.getObjectField, plugin.settings.name + ':uid', id),
+		mergeUid: async.apply(db.sortedSetScore, 'email:uid', email)
 	}, function(err, checks) {
 		if (err) { return callback(err); }
 		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) { return callback(null, checks.uid); }
-		else if (payload.hasOwnProperty(plugin.settings['payload:email']) && payload[plugin.settings['payload:email']].length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
-			winston.info('[session-sharing] Found user via their email, associating this id (' + payload[plugin.settings['payload:id']] + ') with their NodeBB account');
-			db.setObjectField(plugin.settings.name + ':uid', payload[plugin.settings['payload:id']], checks.mergeUid);
+		else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
+			winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
+			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid);
 			return callback(null, checks.mergeUid);
 		}
 
 		// If no match, create a new user
 		winston.info('[session-sharing] No user found, creating a new user for this login');
-		var username = payload[plugin.settings['payload:username']].trim();
+		username = username.trim();
 
 		user.create({
 			username: username,
-			email: payload[plugin.settings['payload:email']],
-			picture: payload[plugin.settings['payload:picture']]
+			email: email,
+			picture: picture
 		}, function(err, uid) {
 			if (err) { return callback(err); }
 
-			db.setObjectField(plugin.settings.name + ':uid', payload[plugin.settings['payload:id']], uid);
+			db.setObjectField(plugin.settings.name + ':uid', id, uid);
 			callback(null, uid);
 		});
 	});
