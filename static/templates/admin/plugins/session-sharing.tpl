@@ -11,6 +11,10 @@
 				<input type="text" id="cookieName" name="cookieName" title="Cookie Name" class="form-control" placeholder="token" />
 			</div>
 			<div class="form-group">
+				<label for="cookieDomain">Cookie Domain</label>
+				<input type="text" id="cookieDomain" name="cookieDomain" title="Cookie Domain" class="form-control" />
+			</div>
+			<div class="form-group">
 				<label for="secret">JWT Secret</label>
 				<input type="text" id="secret" name="secret" title="JWT Secret" class="form-control" />
 				<p class="help-block">

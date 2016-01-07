@@ -18,6 +18,7 @@ var controllers = require('./lib/controllers'),
 		settings: {
 			name: 'appId',
 			cookieName: 'token',
+			cookieDomain: undefined,
 			secret: '',
 			'payload:id': 'id',
 			'payload:email': 'email',
@@ -89,9 +90,13 @@ plugin.findUser = function(payload, callback) {
 
 plugin.addMiddleware = function(data, callback) {
 	data.app.use(function(req, res, next) {
-		// Only respond to page loads, not api or asset calls
+		// Only respond to page loads by guests, not api or asset calls
 		var blacklist = new RegExp('^' + nconf.get('relative_path') + '/(api|vendor|uploads|language|templates)?.+\.(css|js|tpl)?$');
-		if (req.path.match(blacklist)) {
+
+		if (
+			(req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0)	// user logged in
+			|| req.path.match(blacklist)	// path matches blacklist
+		) {
 			return next();
 		} else {
 			if (req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
@@ -119,14 +124,22 @@ plugin.addMiddleware = function(data, callback) {
 				});
 			}
 
-			// res.cookie('access_token', 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJVc2VySUQiOiI4MzYzIiwiVXNlck5hbWUiOiJqdWxpYW5sYW0iLCJGaXJzdE5hbWUiOiJKdWxpYW4iLCJMYXN0TmFtZSI6IkxhbSJ9.95NdeziNRnO5OOr73wOgQ0fnHO02npi7hh_ejT7PS5s', {
-			// 	maxAge: 1000*60*60*24*21,
-			// 	httpOnly: true,
-			// 	domain: 'julian.is.awesome'
-			// })
 			next();
 		}
 	});
+
+	callback();
+};
+
+plugin.cleanup = function(data, callback) {
+	if (plugin.settings.cookieDomain) {
+		winston.verbose('[session-sharing] Clearing cookie');
+		data.res.clearCookie(plugin.settings.cookieName, {
+			domain: plugin.settings.cookieDomain,
+			expires: new Date(),
+			path: '/'
+		});
+	}
 
 	callback();
 };
