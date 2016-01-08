@@ -20,6 +20,7 @@ var controllers = require('./lib/controllers'),
 			cookieName: 'token',
 			cookieDomain: undefined,
 			secret: '',
+			behaviour: 'trust',
 			'payload:id': 'id',
 			'payload:email': 'email',
 			'payload:username': undefined,
@@ -37,6 +38,10 @@ plugin.init = function(params, callback) {
 
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
+
+	if (process.env.NODE_ENV === 'development') {
+		router.get('/debug/session', plugin.generate);
+	}
 
 	plugin.reloadSettings(callback);
 };
@@ -114,13 +119,25 @@ plugin.findUser = function(payload, callback) {
 };
 
 plugin.addMiddleware = function(data, callback) {
+	function handleGuest (req, res, next) {
+		if (plugin.settings.guestRedirect) {
+			// If a guest redirect is specified, follow it
+			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.path)));
+		} else {
+			next();
+		}
+	};
+
 	data.app.use(function(req, res, next) {
 		// Only respond to page loads by guests, not api or asset calls
-		var blacklist = new RegExp('^' + nconf.get('relative_path') + '/(api|vendor|uploads|language|templates)?.+\.(css|js|tpl)?$');
+		var blacklistedRoute = new RegExp('^' + nconf.get('relative_path') + '/(api|vendor|uploads|language|templates|debug)'),
+			blacklistedExt = /\.(css|js|tpl|json)$/,
+			hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 
 		if (
-			(req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0)	// user logged in
-			|| req.path.match(blacklist)	// path matches blacklist
+			!plugin.ready 	// plugin not ready
+			|| (plugin.settings.behaviour === 'trust' && hasSession)	// user logged in
+			|| (req.path.match(blacklistedRoute) || req.path.match(blacklistedExt))	// path matches a blacklist
 		) {
 			return next();
 		} else {
@@ -147,11 +164,12 @@ plugin.addMiddleware = function(data, callback) {
 						next();
 					});
 				});
-			} else if (plugin.settings.guestRedirect) {
-				// If a guest redirect is specified, follow it
-				res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.path)));
+			} else if (hasSession) {
+				// Has login session but no cookie, logout
+				req.logout();
+				handleGuest.apply(null, arguments);
 			} else {
-				next();
+				handleGuest.apply(null, arguments);
 			}
 		}
 	});
@@ -170,6 +188,22 @@ plugin.cleanup = function(data, callback) {
 	}
 
 	callback();
+};
+
+plugin.generate = function(req, res) {
+	var payload = {};
+	payload[plugin.settings['payload:id']] = 1;
+	payload[plugin.settings['payload:username']] = 'testUser';
+	payload[plugin.settings['payload:email']] = 'testUser@example.org';
+
+	var token = jwt.sign(payload, plugin.settings.secret)
+	res.cookie('token', token, {
+		maxAge: 1000*60*60*24*21,
+		httpOnly: true,
+		domain: plugin.settings.cookieDomain
+	});
+
+	res.sendStatus(200);
 };
 
 plugin.addAdminNavigation = function(header, callback) {

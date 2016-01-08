@@ -30,6 +30,17 @@
 		</div>
 	</div>
 	<div class="row">
+		<div class="col-sm-2 col-xs-12 settings-header">Session Handling</div>
+		<div class="col-sm-10 col-xs-12">
+			<div class="form-group">
+				<select class="form-control" name="behaviour">
+					<option value="trust">"Trust" &rarr; Shared cookie token used once only to authenticate, session persists even if cookie cleared</option>
+					<option value="revalidate">"Revalidate" &rarr; Shared cookie is checked on every page load, and updated/logged out to reflect changes in cookie</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	<div class="row">
 		<div class="col-sm-2 col-xs-12 settings-header">Payload Keys</div>
 		<div class="col-sm-10 col-xs-12">
 			<p>
