@@ -56,7 +56,7 @@ plugin.verify = function(payload, callback) {
 		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
 		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
 
-	if (!id || (!username && !firstName && !lastName))
+	if (!id || (!username && !firstName && !lastName)) {
 		return callback(new Error('payload-invalid'));
 	}
 
