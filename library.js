@@ -50,15 +50,14 @@ plugin.process = function(token, callback) {
 };
 
 plugin.verify = function(payload, callback) {
-	var parent = plugin.settings['payload:parent'];
-	if (parent) {
-		if (!payload.hasOwnProperty(parent) || !payload[parent].hasOwnProperty(plugin.settings['payload:id']) || !payload[parent][plugin.settings['payload:id']].length) {
-			return callback(new Error('payload-invalid'));
-		}
-	} else {
-		if (!payload.hasOwnProperty(plugin.settings['payload:id']) || !payload[plugin.settings['payload:id']].length) {
-			return callback(new Error('payload-invalid'));
-		}
+	var parent = plugin.settings['payload:parent'],
+		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
+		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
+
+	if (!id || (!username && !firstName && !lastName))
+		return callback(new Error('payload-invalid'));
 	}
 
 	callback(null, payload);

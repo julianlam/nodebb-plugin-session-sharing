@@ -50,7 +50,7 @@
 			</div>
 			<div class="form-group">
 				<label for="payload:username">Username</label>
-				<input type="text" id="payload:username" name="payload:username" title="Username" class="form-control" placeholder="username">
+				<input type="text" id="payload:username" name="payload:username" title="Username" class="form-control">
 				<p class="help-block">
 					Supercedes first name / last name. If this is set, then the following two fields are ignored
 				</p>
