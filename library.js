@@ -49,12 +49,13 @@ plugin.init = function(params, callback) {
 plugin.process = function(token, callback) {
 	async.waterfall([
 		async.apply(jwt.verify, token, plugin.settings.secret),
-		async.apply(plugin.verify),
-		async.apply(plugin.findUser)
+		async.apply(plugin.verifyToken),
+		async.apply(plugin.findUser),
+		async.apply(plugin.verifyUser)
 	], callback);
 };
 
-plugin.verify = function(payload, callback) {
+plugin.verifyToken = function(payload, callback) {
 	var parent = plugin.settings['payload:parent'],
 		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
@@ -66,6 +67,17 @@ plugin.verify = function(payload, callback) {
 	}
 
 	callback(null, payload);
+};
+
+plugin.verifyUser = function(uid, callback) {
+	// Check ban state of user, reject if banned
+	user.getUserField(uid, 'banned', function(err, banned) {
+		if (parseInt(banned, 10) === 1) {
+			return callback(new Error('banned'));
+		}
+
+		callback(null, uid);
+	});
 };
 
 plugin.findUser = function(payload, callback) {
@@ -145,6 +157,9 @@ plugin.addMiddleware = function(data, callback) {
 				return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
 					if (err) {
 						switch(err.message) {
+							case 'banned':
+								winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+								break;
 							case 'payload-invalid':
 								winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
 								break;
