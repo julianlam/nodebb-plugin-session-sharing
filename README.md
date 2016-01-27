@@ -18,6 +18,11 @@ if the requisite shared cookie is found (more on that below).
 
 You can use this plugin and single sign-on plugins together, but they won't be seamlessly integrated.
 
+## Compatibility
+
+This plugin is compatible with NodeBB **v1.0.0 and up**. As of 27 January 2016, v1.0.0 has not been released
+yet, so you will need to be running the `master` branch of a NodeBB installation via GitHub.
+
 ## How does this work?
 
 This plugin checks incoming requests for a **shared cookie** that is saved by your application when a user
@@ -42,7 +47,7 @@ forum is at `talk.example.com`, the cookie domain should be set to `example.com`
 
 A list of compatible libraries can be obtained on the main website for [JSON Web Tokens](https://jwt.io/).
 
-You'll be encoding a payload that looks something like this:
+You'll be encoding a payload that looks something like this...
 
 ``` json
 {
@@ -50,6 +55,14 @@ You'll be encoding a payload that looks something like this:
 	"username": "foobar"
 }
 ```
+
+... into this JSON Web Token (using a secret of `secret`)...
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIzLCJ1c2VybmFtZSI6ImZvb2JhciJ9.b45U-9GfCZ203-pMAtIgTbTm0PfKRZwpI_cpugtDWVM
+```
+
+**Note**: Don't use `secret` as your secret!
 
 You are required to pass in at least `id` and `username`.
 
@@ -76,7 +89,24 @@ it can properly decode and verify the JWT signature.
 
 In which case, you can set the "Parent Key" setting in this plugin to `d`.
 
+## Security
+
+Please note that according to the JWT spec, the payload itself is ***not encrypted***, only *signed*. That is,
+the Base64 Url Encoded payload is appended to the header. It can be decoded trivially (as base64 is not meant
+to be cryptographically secure), so **do not put any private information in the payload**. The header and
+payload themselves are *signed* against the secret, and NodeBB will only allow a JWT through if it has not been
+tampered with. That is, NodeBB will only continue with a login if the signature can be independently generated
+by the received payload and the secret.
+
+Use secure cookies transmitted via HTTPS if at all possible.
+
 ## Testing
 
 If you need to generate a fake token for testing, you can `GET /debug/session` while NodeBB is in development
 mode. NodeBB will then log in or create a user called "testUser", with the email "testUser@example.org".
+
+**Warning**: If you've configured the plugin to "revalidate" instead of "trust" (normally the default), you
+might accidentally lock yourself out of the administrative account as you won't have a proper cookie to
+authenticate with. To reset the plugin settings, delete the "settings:session-sharing" hash/document in
+your data store. In a pinch, running `./nodebb reset -p nodebb-plugin-session-sharing` will work to disable
+the plugin so you can log back in.
