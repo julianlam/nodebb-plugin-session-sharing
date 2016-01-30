@@ -110,10 +110,10 @@ plugin.updateProfile = function(data, callback) {
 			if (err) {
 				return callback(err);
 			}
-			callback(null, uid);
+			callback(null, data.uid);
 		});
 	} else {
-		callback(null, uid);
+		callback(null, data.uid);
 	}
 };
 
