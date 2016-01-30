@@ -21,6 +21,7 @@ var controllers = require('./lib/controllers'),
 			cookieDomain: undefined,
 			secret: '',
 			behaviour: 'trust',
+			refreshUser: false,
 			'payload:id': 'id',
 			'payload:email': 'email',
 			'payload:username': undefined,
@@ -51,7 +52,9 @@ plugin.process = function(token, callback) {
 		async.apply(jwt.verify, token, plugin.settings.secret),
 		async.apply(plugin.verifyToken),
 		async.apply(plugin.findUser),
-		async.apply(plugin.verifyUser)
+		async.apply(plugin.verifyUser),
+		async.apply(plugin.updateProfile)
+		
 	], callback);
 };
 
@@ -69,16 +72,51 @@ plugin.verifyToken = function(payload, callback) {
 	callback(null, payload);
 };
 
-plugin.verifyUser = function(uid, callback) {
+plugin.verifyUser = function(data, callback) {
 	// Check ban state of user, reject if banned
-	user.getUserField(uid, 'banned', function(err, banned) {
+	user.getUserField(data.uid, 'banned', function(err, banned) {
 		if (parseInt(banned, 10) === 1) {
 			return callback(new Error('banned'));
 		}
 
-		callback(null, uid);
+		callback(null, {uid: data.uid, payload: data.payload});
 	});
 };
+
+plugin.updateProfile = function(data, callback) 
+	{
+			if (plugin.settings.refreshUser) {
+				var uid = data.uid,
+						payload = data.payload;
+				var parent = plugin.settings['payload:parent'],
+					id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
+					email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
+					username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+					firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+					lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
+					picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+					
+					
+					
+				var profileData = {
+					email: email,
+					username: username,
+					fullname: [firstName, lastName].join(' ').trim()
+				};
+				
+				async.parallel({
+					uid: async.apply(user.updateProfile, data.uid, profileData),
+					image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
+				}, function (err, data) {
+					if (err) {
+						return callback(err);
+					}
+					callback(null, uid);
+				});
+			} else {
+				callback(null, uid);
+			}
+	};
 
 plugin.findUser = function(payload, callback) {
 	// If payload id resolves to a user, return the uid, otherwise register a new user
@@ -105,11 +143,11 @@ plugin.findUser = function(payload, callback) {
 		mergeUid: async.apply(db.sortedSetScore, 'email:uid', email)
 	}, function(err, checks) {
 		if (err) { return callback(err); }
-		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) { return callback(null, checks.uid); }
+		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) { return callback(null, {uid: checks.uid, payload: payload}); }
 		else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
 			winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
 			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid);
-			return callback(null, checks.mergeUid);
+			return callback(null, {uid: checks.mergeUid, payload: payload});
 		}
 
 		// If no match, create a new user
@@ -125,7 +163,7 @@ plugin.findUser = function(payload, callback) {
 			if (err) { return callback(err); }
 
 			db.setObjectField(plugin.settings.name + ':uid', id, uid);
-			callback(null, uid);
+			callback(null, {uid: uid, payload: payload});
 		});
 	});
 };
