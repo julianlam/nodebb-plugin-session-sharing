@@ -21,7 +21,7 @@ var controllers = require('./lib/controllers'),
 			cookieDomain: undefined,
 			secret: '',
 			behaviour: 'trust',
-			refreshUser: false,
+			refreshUser: true,
 			'payload:id': 'id',
 			'payload:email': 'email',
 			'payload:username': undefined,
@@ -104,13 +104,13 @@ plugin.updateProfile = function(data, callback) {
 		};
 		
 		async.parallel({
-			uid: async.apply(user.updateProfile, data.uid, profileData),
+			updated: async.apply(user.updateProfile, data.uid, profileData),
 			image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
-		}, function (err, data) {
+		}, function (err, done) {
 			if (err) {
 				return callback(err);
 			}
-			callback(null, data.uid);
+			callback(null, done.updated.uid);
 		});
 	} else {
 		callback(null, data.uid);
