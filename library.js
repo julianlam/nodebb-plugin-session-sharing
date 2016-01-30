@@ -83,40 +83,39 @@ plugin.verifyUser = function(data, callback) {
 	});
 };
 
-plugin.updateProfile = function(data, callback) 
-	{
-			if (plugin.settings.refreshUser) {
-				var uid = data.uid,
-						payload = data.payload;
-				var parent = plugin.settings['payload:parent'],
-					id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
-					email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
-					username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
-					firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-					lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
-					picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
-					
-					
-					
-				var profileData = {
-					email: email,
-					username: username,
-					fullname: [firstName, lastName].join(' ').trim()
-				};
-				
-				async.parallel({
-					uid: async.apply(user.updateProfile, data.uid, profileData),
-					image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
-				}, function (err, data) {
-					if (err) {
-						return callback(err);
-					}
-					callback(null, uid);
-				});
-			} else {
-				callback(null, uid);
+plugin.updateProfile = function(data, callback) {
+	if (plugin.settings.refreshUser) {
+		var uid = data.uid,
+				payload = data.payload;
+		var parent = plugin.settings['payload:parent'],
+			id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
+			email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
+			username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+			firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+			lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
+			picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+			
+			
+			
+		var profileData = {
+			email: email,
+			username: username,
+			fullname: [firstName, lastName].join(' ').trim()
+		};
+		
+		async.parallel({
+			uid: async.apply(user.updateProfile, data.uid, profileData),
+			image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
+		}, function (err, data) {
+			if (err) {
+				return callback(err);
 			}
-	};
+			callback(null, uid);
+		});
+	} else {
+		callback(null, uid);
+	}
+};
 
 plugin.findUser = function(payload, callback) {
 	// If payload id resolves to a user, return the uid, otherwise register a new user
