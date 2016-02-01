@@ -113,7 +113,14 @@ plugin.updateProfile = function(data, callback) {
                 }
                 // End optional async.parallel query
 		
+<<<<<<< HEAD
 		async.parallel(query, function (err, done) {
+=======
+		async.parallel({
+			updated: async.apply(user.updateProfile, data.uid, profileData),
+			image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
+		}, function (err, done) {
+>>>>>>> parent of a4304e2... users with no picture will have default
 			if (err) {
 				return callback(err);
 			}
