@@ -11,10 +11,6 @@ var _ = module.parent.require('underscore'),
 
 var jwt = require('jsonwebtoken');
 
-var _blankFunc = function(callback) {
-  callback(null, false);
-}
-
 var controllers = require('./lib/controllers'),
 
 	plugin = {
@@ -90,7 +86,7 @@ plugin.verifyUser = function(data, callback) {
 plugin.updateProfile = function(data, callback) {
 	if (plugin.settings.refreshUser) {
 		var uid = data.uid,
-				payload = data.payload;
+		     payload = data.payload;
 		var parent = plugin.settings['payload:parent'],
 			id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 			email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
@@ -106,11 +102,18 @@ plugin.updateProfile = function(data, callback) {
 			username: username,
 			fullname: [firstName, lastName].join(' ').trim()
 		};
+
+                // Declare async.parellel query, add optional parameters to it if true
+                var query = {
+                  updated: async.apply(user.updateProfile, data.uid, profileData)
+                };
+
+                if (picture !== undefined) {
+                  query.image = async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture });
+                }
+                // End optional async.parallel query
 		
-		async.parallel({
-			updated: async.apply(user.updateProfile, data.uid, profileData),
-			image: (picture === '' || undefined) ? async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture }) : async.apply(_blankFunc)
-		}, function (err, done) {
+		async.parallel(query, function (err, done) {
 			if (err) {
 				return callback(err);
 			}
