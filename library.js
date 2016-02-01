@@ -11,6 +11,10 @@ var _ = module.parent.require('underscore'),
 
 var jwt = require('jsonwebtoken');
 
+var _blankFunc = function(callback) {
+  callback(null, false);
+}
+
 var controllers = require('./lib/controllers'),
 
 	plugin = {
@@ -105,7 +109,7 @@ plugin.updateProfile = function(data, callback) {
 		
 		async.parallel({
 			updated: async.apply(user.updateProfile, data.uid, profileData),
-			image: async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture })
+			image: (picture === '' || undefined) ? async.apply(user.setUserFields, data.uid, { uploadedpicture: picture, picture: picture }) : async.apply(_blankFunc)
 		}, function (err, done) {
 			if (err) {
 				return callback(err);
