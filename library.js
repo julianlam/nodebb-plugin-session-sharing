@@ -135,6 +135,8 @@ plugin.addMiddleware = function(data, callback) {
 		if (plugin.settings.guestRedirect) {
 			// If a guest redirect is specified, follow it
 			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.path)));
+		} else if (res.locals.fullRefresh === true) {
+			res.redirect(req.url);
 		} else {
 			next();
 		}
@@ -182,6 +184,7 @@ plugin.addMiddleware = function(data, callback) {
 			} else if (hasSession) {
 				// Has login session but no cookie, logout
 				req.logout();
+				res.locals.fullRefresh = true;
 				handleGuest.apply(null, arguments);
 			} else {
 				handleGuest.apply(null, arguments);
