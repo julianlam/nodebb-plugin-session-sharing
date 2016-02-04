@@ -86,6 +86,16 @@
 					Otherwise, this plugin assumes the relevant data is at the root level.
 				</p>
 			</div>
+                        <div class="form-group">
+                                <label for="refreshUser">Refresh User</label>
+                                <select class="form-control" name="refreshUser">
+                                    <option value="0">False</option>
+                                    <option value="1">True</option>
+                                </select>
+                                <p class="help-block">
+                                      Set to true if you want to refresh users data each time they login (if they have a dynamic username, email, picture)
+                                </p>
+                        </div>
 		</div>
 	</div>
 	<div class="row">
