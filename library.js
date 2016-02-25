@@ -87,10 +87,7 @@ plugin.findUser = function(payload, callback) {
 	var parent = plugin.settings['payload:parent'],
 		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
-		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
-		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
-		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']];
 
 	if (!username && firstName && lastName) {
 		username = [firstName, lastName].join(' ').trim();
@@ -105,28 +102,64 @@ plugin.findUser = function(payload, callback) {
 		mergeUid: async.apply(db.sortedSetScore, 'email:uid', email)
 	}, function(err, checks) {
 		if (err) { return callback(err); }
-		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) { return callback(null, checks.uid); }
-		else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
+
+		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
+			// Ensure the uid exists
+			user.exists(parseInt(checks.uid, 10), function(err, exists) {
+				if (err) {
+					return callback(err);
+				} else if (exists) {
+					return callback(null, checks.uid);
+				} else {
+					async.series([
+						async.apply(db.deleteObjectField, plugin.settings.name + ':uid', id),	// reference is outdated, user got deleted
+						async.apply(plugin.createUser, payload)
+					], function(err, data) {
+						callback(err, data[1]);
+					});
+				}
+			});
+		} else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
 			winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
 			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid);
-			return callback(null, checks.mergeUid);
+			callback(null, checks.mergeUid);
+		} else {
+			// No match, create a new user
+			plugin.createUser(payload, callback);
 		}
+	});
+};
 
-		// If no match, create a new user
-		winston.info('[session-sharing] No user found, creating a new user for this login');
-		username = username.trim();
+plugin.createUser = function(payload, callback) {
+	var parent = plugin.settings['payload:parent'],
+		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
+		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
+		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
+		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 
-		user.create({
-			username: username,
-			email: email,
-			picture: picture,
-			fullname: [firstName, lastName].join(' ').trim()
-		}, function(err, uid) {
-			if (err) { return callback(err); }
+	if (!username && firstName && lastName) {
+		username = [firstName, lastName].join(' ').trim();
+	} else if (!username && firstName && !lastName) {
+		username = firstName;
+	} else if (!username && !firstName && lastName) {
+		username = lastName;
+	}
 
-			db.setObjectField(plugin.settings.name + ':uid', id, uid);
-			callback(null, uid);
-		});
+	winston.info('[session-sharing] No user found, creating a new user for this login');
+	username = username.trim();
+
+	user.create({
+		username: username,
+		email: email,
+		picture: picture,
+		fullname: [firstName, lastName].join(' ').trim()
+	}, function(err, uid) {
+		if (err) { return callback(err); }
+
+		db.setObjectField(plugin.settings.name + ':uid', id, uid);
+		callback(null, uid);
 	});
 };
 
