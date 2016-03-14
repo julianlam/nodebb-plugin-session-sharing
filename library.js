@@ -188,6 +188,17 @@ plugin.addMiddleware = function(data, callback) {
 		) {
 			return next();
 		} else {
+			// Hook into ip blacklist functionality in core
+			if (meta.blacklist.test(req.ip)) {
+				if (hasSession) {
+					req.logout();
+					res.locals.fullRefresh = true;
+				}
+
+				plugin.cleanup({ res: res });
+				return handleGuest.apply(null, arguments);
+			}
+
 			if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 				return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
 					if (err) {
@@ -238,7 +249,11 @@ plugin.cleanup = function(data, callback) {
 		});
 	}
 
-	callback();
+	if (typeof callback === 'function') {
+		callback();
+	} else {
+		return true;
+	}
 };
 
 plugin.generate = function(req, res) {
