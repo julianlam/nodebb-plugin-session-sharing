@@ -1,7 +1,8 @@
 "use strict";
 
 var meta = module.parent.require('./meta'),
-	user = module.parent.require('./user');
+	user = module.parent.require('./user'),
+	SocketPlugins = require.main.require('./src/socket.io/plugins');
 
 var _ = module.parent.require('underscore'),
 	winston = module.parent.require('winston'),
@@ -45,6 +46,33 @@ plugin.init = function(params, callback) {
 
 	plugin.reloadSettings(callback);
 };
+
+/* Websocket Listeners */
+
+SocketPlugins.sessionSharing = {};
+
+SocketPlugins.sessionSharing.showUserId = function(socket, data, callback) {
+	// Retrieve the hash and find a match
+	var uid = data.uid,
+		remoteId, match;
+
+	if (uid) {
+		db.getObject(plugin.settings.name + ':uid', function(err, hash) {
+			for(remoteId in hash) {
+				if (hash.hasOwnProperty(remoteId) && hash[remoteId] === uid) {
+					match = remoteId;
+					break;
+				}
+			}
+
+			callback(null, match || null);
+		});
+	} else {
+		callback(new Error('no-uid-supplied'));
+	}
+};
+
+/* End Websocket Listeners */
 
 plugin.process = function(token, callback) {
 	async.waterfall([
