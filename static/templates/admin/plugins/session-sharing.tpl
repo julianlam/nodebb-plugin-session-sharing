@@ -119,6 +119,18 @@
 					<p id="result"></p>
 				</div>
 			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">Remote ID Search</h3>
+				</div>
+				<div class="panel-body">
+					<input type="text" class="form-control" id="remote_search" />
+					<p class="help-block">
+						Enter a remote ID here to find their NodeBB user profile.
+					</p>
+					<p id="local_result"></p>
+				</div>
+			</div>
 		</div>
 	</div>
 </form>

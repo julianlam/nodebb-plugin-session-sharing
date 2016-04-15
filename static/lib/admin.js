@@ -23,6 +23,7 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 		});
 
 		$('#search').on('keyup', ACP.showUserId);
+		$('#remote_search').on('keyup', ACP.findUserByRemoteId);
 	};
 
 	ACP.showUserId = function(e) {
@@ -53,6 +54,33 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 					});
 				} else {
 					$('#result').text('No users matched your query');
+				}
+			});
+		}, 500);
+	};
+
+	ACP.findUserByRemoteId = function(e) {
+		if (ACP._searchDelay) {
+			clearTimeout(ACP._searchDelay);
+			delete ACP._searchDelay;
+		}
+
+		var element = $(this);
+
+		ACP._searchDelay = setTimeout(function() {
+			delete ACP._searchDelay;
+
+			socket.emit('plugins.sessionSharing.findUserByRemoteId', {
+				remoteId: element.val()
+			}, function(err, results) {
+				if (!err && results) {
+					$('#local_result').html(
+						'<div class="media"><div class="media-left"><a target="_blank" href="' + config.relative_path + '/user/' + results.userslug + '">' +
+						(results.picture ? '<img class="media-object avatar avatar-sm" src="' + results.picture + '" alt="Profile Picture">' : '<div class="avatar avatar-sm" style="background-color: ' + results['icon:bgColor'] + ';">' + results['icon:text'] + '</div>') +
+						'</a></div>' +
+						'<div class="media-body"><a target="_blank" href="' + config.relative_path + '/user/' + results.userslug + '">' + results.username + '</a></div></div>');
+				} else {
+					$('#local_result').text('No users were found associated with that remote ID');
 				}
 			});
 		}, 500);
