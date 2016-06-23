@@ -13,8 +13,9 @@ var _ = module.parent.require('underscore'),
 var jwt = require('jsonwebtoken');
 
 var controllers = require('./lib/controllers'),
+	nbbAuthController = module.parent.require('./controllers/authentication');
 
-	plugin = {
+var plugin = {
 		ready: false,
 		settings: {
 			name: 'appId',
@@ -263,12 +264,7 @@ plugin.addMiddleware = function(data, callback) {
 					}
 
 					winston.info('[session-sharing] Processing login for uid ' + uid);
-					req.login({
-						uid: uid
-					}, function() {
-						req.uid = uid;
-						next();
-					});
+					nbbAuthController.doLogin(req, uid, next);
 				});
 			} else if (hasSession) {
 				// Has login session but no cookie, logout
