@@ -264,6 +264,7 @@ plugin.addMiddleware = function(data, callback) {
 					}
 
 					winston.info('[session-sharing] Processing login for uid ' + uid);
+					req.uid = uid;
 					nbbAuthController.doLogin(req, uid, next);
 				});
 			} else if (hasSession) {
