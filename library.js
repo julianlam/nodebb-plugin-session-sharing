@@ -75,22 +75,29 @@ SocketPlugins.sessionSharing.showUserId = function(socket, data, callback) {
 
 SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callback) {
 	if (data.remoteId) {
-		async.waterfall([
-			async.apply(db.getObjectField, plugin.settings.name + ':uid', data.remoteId),
-			function(uid, next) {
-				if (uid) {
-					user.getUserFields(uid, ['username', 'userslug', 'picture'], next);
-				} else {
-					setImmediate(next);
-				}
-			}
-		], callback);
+		plugin.getUser(data.remoteId, callback);
 	} else {
 		callback(new Error('no-remote-id-supplied'));
 	}
 }
 
 /* End Websocket Listeners */
+
+/*
+ *	Given a remoteId, show user data
+ */
+plugin.getUser = function(remoteId, callback) {
+	async.waterfall([
+		async.apply(db.getObjectField, plugin.settings.name + ':uid', remoteId),
+		function(uid, next) {
+			if (uid) {
+				user.getUserFields(uid, ['username', 'userslug', 'picture'], next);
+			} else {
+				setImmediate(next);
+			}
+		}
+	], callback);
+};
 
 plugin.process = function(token, callback) {
 	async.waterfall([
