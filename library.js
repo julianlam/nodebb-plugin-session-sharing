@@ -219,7 +219,7 @@ plugin.addMiddleware = function(data, callback) {
 		} else {
 			next();
 		}
-	};
+	}
 
 	data.app.use(function(req, res, next) {
 		// Only respond to page loads by guests, not api or asset calls
@@ -228,9 +228,9 @@ plugin.addMiddleware = function(data, callback) {
 			hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 
 		if (
-			!plugin.ready 	// plugin not ready
-			|| (plugin.settings.behaviour === 'trust' && hasSession)	// user logged in
-			|| (req.path.match(blacklistedRoute) || req.path.match(blacklistedExt))	// path matches a blacklist
+			!plugin.ready ||	// plugin not ready
+			(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in
+			(req.path.match(blacklistedRoute) || req.path.match(blacklistedExt))	// path matches a blacklist
 		) {
 			return next();
 		} else {
