@@ -314,7 +314,7 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:email']] = 'testUser@example.org';
 
 	var token = jwt.sign(payload, plugin.settings.secret)
-	res.cookie('token', token, {
+	res.cookie(plugin.settings.cookieName, token, {
 		maxAge: 1000*60*60*24*21,
 		httpOnly: true,
 		domain: plugin.settings.cookieDomain
@@ -342,6 +342,10 @@ plugin.reloadSettings = function(callback) {
 		if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
 			winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
 			return callback();
+		}
+
+		if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName']) {
+			settings['payload:username'] = 'username';
 		}
 
 		winston.info('[session-sharing] Settings OK');
