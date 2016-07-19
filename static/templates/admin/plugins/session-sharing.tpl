@@ -70,11 +70,11 @@
 					</div>
 					<div class="form-group">
 						<label for="payload:firstName">First Name</label>
-						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name" class="form-control" placeholder="firstName">
+						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name" class="form-control">
 					</div>
 					<div class="form-group">
 						<label for="payload:lastName">Last Name</label>
-						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name" class="form-control" placeholder="lastName">
+						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name" class="form-control">
 					</div>
 					<div class="form-group">
 						<label for="payload:picture">Picture</label>

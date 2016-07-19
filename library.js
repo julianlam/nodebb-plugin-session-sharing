@@ -79,7 +79,7 @@ SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callbac
 	} else {
 		callback(new Error('no-remote-id-supplied'));
 	}
-}
+};
 
 /* End Websocket Listeners */
 
@@ -140,7 +140,9 @@ plugin.findUser = function(payload, callback) {
 	var parent = plugin.settings['payload:parent'],
 		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
-		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']];
+		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
+		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
 
 	if (!username && firstName && lastName) {
 		username = [firstName, lastName].join(' ').trim();
