@@ -41,6 +41,8 @@ plugin.init = function(params, callback) {
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
+	router.get('/session-sharing/lookup', controllers.retrieveUser);
+
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
 	}
