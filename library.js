@@ -1,5 +1,7 @@
 "use strict";
 
+/* globals process, require, module */
+
 var meta = module.parent.require('./meta'),
 	user = module.parent.require('./user'),
 	SocketPlugins = require.main.require('./src/socket.io/plugins');
@@ -35,13 +37,12 @@ var plugin = {
 
 plugin.init = function(params, callback) {
 	var router = params.router,
-		hostMiddleware = params.middleware,
-		hostControllers = params.controllers;
+		hostMiddleware = params.middleware;
 
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
-	router.get('/session-sharing/lookup', controllers.retrieveUser);
+	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
@@ -315,7 +316,7 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:username']] = 'testUser';
 	payload[plugin.settings['payload:email']] = 'testUser@example.org';
 
-	var token = jwt.sign(payload, plugin.settings.secret)
+	var token = jwt.sign(payload, plugin.settings.secret);
 	res.cookie(plugin.settings.cookieName, token, {
 		maxAge: 1000*60*60*24*21,
 		httpOnly: true,
