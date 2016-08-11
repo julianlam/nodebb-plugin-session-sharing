@@ -14,9 +14,9 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 					type: 'success',
 					alert_id: 'session-sharing-saved',
 					title: 'Settings Saved',
-					message: 'Please reload your NodeBB to apply these settings',
+					message: 'Please restart your NodeBB to apply these settings',
 					clickfn: function() {
-						socket.emit('admin.reload');
+						socket.emit('admin.restart');
 					}
 				});
 			});
