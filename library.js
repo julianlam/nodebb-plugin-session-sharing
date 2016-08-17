@@ -241,7 +241,7 @@ plugin.addMiddleware = function(data, callback) {
 
 		if (
 			!plugin.ready ||	// plugin not ready
-			(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in
+			(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
 			(req.path.match(blacklistedRoute) || req.path.match(blacklistedExt))	// path matches a blacklist
 		) {
 			return next();
@@ -280,10 +280,17 @@ plugin.addMiddleware = function(data, callback) {
 					nbbAuthController.doLogin(req, uid, next);
 				});
 			} else if (hasSession) {
-				// Has login session but no cookie, logout
-				req.logout();
-				res.locals.fullRefresh = true;
-				handleGuest.apply(null, arguments);
+				// Has login session but no cookie, can assume "revalidate" behaviour
+				user.isAdministrator(req.user.uid, function(err, isAdmin) {
+					if (!isAdmin) {
+						req.logout();
+						res.locals.fullRefresh = true;
+						handleGuest(req, res, next);
+					} else {
+						// Admins can bypass
+						return next();
+					}
+				});
 			} else {
 				handleGuest.apply(null, arguments);
 			}
