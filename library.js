@@ -27,9 +27,9 @@ var plugin = {
 			behaviour: 'trust',
 			'payload:id': 'id',
 			'payload:email': 'email',
-			'payload:username': undefined,
-			'payload:firstName': undefined,
-			'payload:lastName': undefined,
+			'payload:username': 'username',
+			'payload:firstName': 'firstName',
+			'payload:lastName': 'lastName',
 			'payload:picture': 'picture',
 			'payload:parent': undefined
 		}
