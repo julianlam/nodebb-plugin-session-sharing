@@ -25,6 +25,7 @@ var plugin = {
 			cookieDomain: undefined,
 			secret: '',
 			behaviour: 'trust',
+			noRegistration: 'off',
 			'payload:id': 'id',
 			'payload:email': 'email',
 			'payload:username': 'username',
@@ -189,6 +190,10 @@ plugin.findUser = function(payload, callback) {
 };
 
 plugin.createUser = function(payload, callback) {
+	if (plugin.settings.noRegistration === 'on') {
+		return callback(new Error('no-match'));
+	}
+
 	var parent = plugin.settings['payload:parent'],
 		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
@@ -263,16 +268,23 @@ plugin.addMiddleware = function(data, callback) {
 						switch(err.message) {
 							case 'banned':
 								winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+								next();
 								break;
 							case 'payload-invalid':
 								winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+								next();
+								break;
+							case 'no-match':
+								winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+								handleGuest.call(null, req, res, next);
 								break;
 							default:
 								winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+								next();
 								break;
 						}
 
-						return next();
+						return;
 					}
 
 					winston.info('[session-sharing] Processing login for uid ' + uid);
