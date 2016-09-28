@@ -51,6 +51,21 @@
 							that cookie will not resolve into a session and that client will remain a guest.
 						</div>
 					</div>
+					<div class="form-group">
+						<label for="logoutRedirect">Logout Redirection</label>
+						<input type="text" class="form-control" id="logoutRedirect" name="logoutRedirect" />
+						<p class="help-block">
+							If set, once a user logs out from NodeBB, they will be sent to this link. Setting this option may be useful if you'd like to trigger
+							a session logout in your own application instead.
+						</p>
+					</div>
+					<div class="form-group">
+						<label for="loginOverride">Login Override</label>
+						<input type="text" class="form-control" id="loginOverride" name="loginOverride" />
+						<p class="help-block">
+							If set, users clicking the "Login" button will be redirected to this link instead
+						</p>
+					</div>
 				</div>
 			</div>
 			<div class="row">

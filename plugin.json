@@ -6,7 +6,8 @@
 		{ "hook": "static:app.preload", "method": "addMiddleware" },
 		{ "hook": "static:app.load", "method": "init" },
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
-		{ "hook": "static:user.loggedOut", "method": "cleanup" }
+		{ "hook": "static:user.loggedOut", "method": "cleanup" },
+		{ "hook": "filter:config.get", "method": "appendConfig" }
 	],
 	"less": [
 		"static/style.less"

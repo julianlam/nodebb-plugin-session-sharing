@@ -21,7 +21,7 @@
   },
   "readmeFilename": "README.md",
   "nbbpm": {
-    "compatibility": "^1.0.1"
+    "compatibility": "~1.2.x"
   },
   "dependencies": {
     "jsonwebtoken": "5.5.4"

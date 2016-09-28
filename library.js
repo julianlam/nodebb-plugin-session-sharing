@@ -52,6 +52,15 @@ plugin.init = function(params, callback) {
 	plugin.reloadSettings(callback);
 };
 
+plugin.appendConfig = function(config, callback) {
+	config.sessionSharing = {
+		logoutRedirect: plugin.settings.logoutRedirect,
+		loginOverride: plugin.settings.loginOverride
+	}
+
+	callback(null, config);
+};
+
 /* Websocket Listeners */
 
 SocketPlugins.sessionSharing = {};
