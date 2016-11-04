@@ -248,9 +248,9 @@ plugin.addMiddleware = function(data, callback) {
 	}
 
 	data.app.use(function(req, res, next) {
-		// Only respond to page loads by guests, not api or asset calls
-		var blacklistedRoute = new RegExp('^' + nconf.get('relative_path') + '/(api|vendor|uploads|language|templates|debug)'),
-			blacklistedExt = /\.(css|js|tpl|json|jpg|png|bmp|rss|xml|woff2)$/,
+		// Only respond to page loads by guests, not asset calls
+		var blacklistedRoute = new RegExp('^' + nconf.get('relative_path') + '/(vendor|uploads|language|templates|debug)'),
+			blacklistedExt = /\.(css|js|tpl|jpg|png|bmp|woff2)$/,
 			hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 
 		if (
