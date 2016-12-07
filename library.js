@@ -2,20 +2,20 @@
 
 /* globals process, require, module */
 
-var meta = module.parent.require('./meta'),
-	user = module.parent.require('./user'),
-	SocketPlugins = require.main.require('./src/socket.io/plugins');
+var meta = module.parent.require('./meta');
+var user = module.parent.require('./user');
+var SocketPlugins = require.main.require('./src/socket.io/plugins');
 
-var _ = module.parent.require('underscore'),
-	winston = module.parent.require('winston'),
-	async = module.parent.require('async'),
-	db = module.parent.require('./database'),
-	nconf = module.parent.require('nconf');
+var _ = module.parent.require('underscore');
+var winston = module.parent.require('winston');
+var async = require('async');
+var db = module.parent.require('./database');
+var nconf = module.parent.require('nconf');
 
 var jwt = require('jsonwebtoken');
 
-var controllers = require('./lib/controllers'),
-	nbbAuthController = module.parent.require('./controllers/authentication');
+var controllers = require('./lib/controllers');
+var nbbAuthController = module.parent.require('./controllers/authentication');
 
 var plugin = {
 		ready: false,
@@ -56,7 +56,7 @@ plugin.appendConfig = function(config, callback) {
 	config.sessionSharing = {
 		logoutRedirect: plugin.settings.logoutRedirect,
 		loginOverride: plugin.settings.loginOverride
-	}
+	};
 
 	callback(null, config);
 };
@@ -138,8 +138,8 @@ plugin.verifyToken = function(payload, callback) {
 plugin.verifyUser = function(uid, callback) {
 	// Check ban state of user, reject if banned
 	user.getUserField(uid, 'banned', function(err, banned) {
-		if (parseInt(banned, 10) === 1) {
-			return callback(new Error('banned'));
+		if (err || parseInt(banned, 10) === 1) {
+			return callback(err || new Error('banned'));
 		}
 
 		callback(null, uid);
@@ -189,8 +189,9 @@ plugin.findUser = function(payload, callback) {
 			});
 		} else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
 			winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
-			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid);
-			callback(null, checks.mergeUid);
+			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid, function (err) {
+				callback(err, checks.mergeUid);
+			});
 		} else {
 			// No match, create a new user
 			plugin.createUser(payload, callback);
@@ -230,8 +231,9 @@ plugin.createUser = function(payload, callback) {
 	}, function(err, uid) {
 		if (err) { return callback(err); }
 
-		db.setObjectField(plugin.settings.name + ':uid', id, uid);
-		callback(null, uid);
+		db.setObjectField(plugin.settings.name + ':uid', id, uid, function (err) {
+			callback(err, uid);
+		});
 	});
 };
 
@@ -296,7 +298,7 @@ plugin.addMiddleware = function(data, callback) {
 						return;
 					}
 
-					winston.info('[session-sharing] Processing login for uid ' + uid);
+					winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.path);
 					req.uid = uid;
 					nbbAuthController.doLogin(req, uid, next);
 				});
