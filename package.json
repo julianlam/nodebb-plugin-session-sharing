@@ -24,6 +24,7 @@
     "compatibility": "~1.2.x"
   },
   "dependencies": {
+    "async": "2.1.4",
     "jsonwebtoken": "5.5.4"
   }
 }
