@@ -299,9 +299,7 @@ plugin.addMiddleware = function(req, res, next) {
 
 				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.path);
 				req.uid = uid;
-				nbbAuthController.doLogin(req, uid, function () {
-					res.redirect(req.url);
-				});
+				nbbAuthController.doLogin(req, uid, next);
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
