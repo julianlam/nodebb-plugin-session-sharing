@@ -65,24 +65,26 @@ plugin.appendConfig = function(config, callback) {
 
 SocketPlugins.sessionSharing = {};
 
-SocketPlugins.sessionSharing.showUserId = function(socket, data, callback) {
-	// Retrieve the hash and find a match
-	var uid = data.uid,
-		remoteId, match;
+SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
+	// Retrieve the hash and find matches
+	var uids = data.uids;
+	var payload = [];
+	var match, idx;
 
-	if (uid) {
+	payload.length = uids.length;
+
+	if (uids.length) {
 		db.getObject(plugin.settings.name + ':uid', function(err, hash) {
-			for(remoteId in hash) {
-				if (hash.hasOwnProperty(remoteId) && hash[remoteId] === uid) {
-					match = remoteId;
-					break;
+			for(var remoteId in hash) {
+				if (hash.hasOwnProperty(remoteId) && (idx = uids.indexOf(hash[remoteId]))) {
+					payload[idx] = remoteId;
 				}
 			}
 
-			callback(null, match || null);
+			callback(null, payload);
 		});
 	} else {
-		callback(new Error('no-uid-supplied'));
+		callback(new Error('no-uids-supplied'));
 	}
 };
 

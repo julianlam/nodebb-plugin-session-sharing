@@ -40,20 +40,25 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 			socket.emit('admin.user.search', {
 				query: element.val()
 			}, function(err, results) {
+				var resultEl = $('#result');
+
 				if (results.users.length) {
-					socket.emit('plugins.sessionSharing.showUserId', {
-						uid: results.users[0].uid
-					}, function(err, uid) {
+					socket.emit('plugins.sessionSharing.showUserIds', {
+						uids: results.users.map(function (user) {
+							return user.uid;
+						})
+					}, function(err, remoteIds) {
 						if (err) {
-							$('#result').text('We encountered an error while servicing this request:' + err.message);
-						} else if (uid) {
-							$('#result').text('NodeBB uid: ' + results.users[0].uid + ' | Remote id: ' + uid);
+							resultEl.text('We encountered an error while servicing this request:' + err.message);
 						} else {
-							$('#result').text('We were unable to find a remote id belonging to that user');
+							resultEl.empty();
+							results.users.forEach(function (userObj, idx) {
+								resultEl.append('<p>Username: ' + userObj.username + '<br />NodeBB uid: ' + userObj.uid + '<br />Remote id: ' + (remoteIds[idx] || '<em>Not Found</em>'));
+							});
 						}
 					});
 				} else {
-					$('#result').text('No users matched your query');
+					resultEl.text('No users matched your query');
 				}
 			});
 		}, 500);
