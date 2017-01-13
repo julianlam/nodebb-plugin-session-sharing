@@ -253,12 +253,17 @@ plugin.addMiddleware = function(req, res, next) {
 
 	// Only respond to page loads by guests, not api or asset calls
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
+	var hasLoginLock = req.session.hasOwnProperty('loginLock');
 
 	if (
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
+		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
 		req.path.startsWith('/api')
 	) {
+		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
+		delete req.session.loginLock;	// remove login lock for "revalidate" logins
+
 		return next();
 	} else {
 		// Hook into ip blacklist functionality in core
@@ -299,7 +304,10 @@ plugin.addMiddleware = function(req, res, next) {
 
 				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.path);
 				req.uid = uid;
-				nbbAuthController.doLogin(req, uid, next);
+				nbbAuthController.doLogin(req, uid, function () {
+					req.session.loginLock = true;
+					res.redirect(req.url);
+				});
 			});
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
