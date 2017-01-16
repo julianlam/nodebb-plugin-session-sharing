@@ -243,7 +243,7 @@ plugin.addMiddleware = function(req, res, next) {
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect) {
 			// If a guest redirect is specified, follow it
-			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.path)));
+			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.originalUrl)));
 		} else if (res.locals.fullRefresh === true) {
 			res.redirect(req.url);
 		} else {
@@ -259,7 +259,7 @@ plugin.addMiddleware = function(req, res, next) {
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
 		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
-		req.path.startsWith('/api')
+		req.originalUrl.startsWith('/api')
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
@@ -302,11 +302,11 @@ plugin.addMiddleware = function(req, res, next) {
 					return;
 				}
 
-				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.path);
+				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 				req.uid = uid;
 				nbbAuthController.doLogin(req, uid, function () {
 					req.session.loginLock = true;
-					res.redirect(req.url);
+					res.redirect(req.originalUrl);
 				});
 			});
 		} else if (hasSession) {
