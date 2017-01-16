@@ -76,7 +76,8 @@ SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
 	if (uids.length) {
 		db.getObject(plugin.settings.name + ':uid', function(err, hash) {
 			for(var remoteId in hash) {
-				if (hash.hasOwnProperty(remoteId) && (idx = uids.indexOf(hash[remoteId]))) {
+				idx = uids.indexOf(hash[remoteId]);
+				if (hash.hasOwnProperty(remoteId) && idx !== -1) {
 					payload[idx] = remoteId;
 				}
 			}
