@@ -350,6 +350,8 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:id']] = 1;
 	payload[plugin.settings['payload:username']] = 'testUser';
 	payload[plugin.settings['payload:email']] = 'testUser@example.org';
+	payload[plugin.settings['payload:firstName']] = 'Test';
+	payload[plugin.settings['payload:lastName']] = 'User';
 
 	var token = jwt.sign(payload, plugin.settings.secret);
 	res.cookie(plugin.settings.cookieName, token, {
