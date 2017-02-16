@@ -242,7 +242,7 @@ plugin.createUser = function(payload, callback) {
 
 plugin.addMiddleware = function(req, res, next) {
 	function handleGuest (req, res, next) {
-		if (plugin.settings.guestRedirect) {
+		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
 			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.originalUrl)));
 		} else if (res.locals.fullRefresh === true) {
@@ -260,7 +260,7 @@ plugin.addMiddleware = function(req, res, next) {
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
 		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
-		req.originalUrl.startsWith('/api')
+		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
