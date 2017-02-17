@@ -140,12 +140,8 @@ plugin.verifyToken = function(payload, callback) {
 
 plugin.verifyUser = function(uid, callback) {
 	// Check ban state of user, reject if banned
-	user.getUserField(uid, 'banned', function(err, banned) {
-		if (err || parseInt(banned, 10) === 1) {
-			return callback(err || new Error('banned'));
-		}
-
-		callback(null, uid);
+	user.isBanned(uid, function(err, banned) {
+		callback(err || banned ? new Error('banned') : null, uid);
 	});
 };
 
