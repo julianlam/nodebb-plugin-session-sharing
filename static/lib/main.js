@@ -1,18 +1,36 @@
 "use strict";
 
-(function() {
-	/*
-		This file shows how client-side javascript can be included via a plugin.
-		If you check `plugin.json`, you'll see that this file is listed under "scripts".
-		That array tells NodeBB which files to bundle into the minified javascript
-		that is served to the end user.
+$(document).ready(function() {
+	$(window).on('action:app.loggedOut', function(e, data) {
+		if (config.sessionSharing.logoutRedirect) {
+			data.next = config.sessionSharing.logoutRedirect;
+		}
+	});
 
-		Some events you can elect to listen for:
+	$(window).on('action:ajaxify.end', function(ev, data) {
+		if (config.sessionSharing.loginOverride) {
+			$('a[href="/login"]').off('click').on('click', loginRedirect);
+		}
+	});
 
-		$(document).ready();			Fired when the DOM is ready
-		$(window).on('action:ajaxify.end', function(data) { ... });			"data" contains "url"
-	*/
+	$(window).on('action:ajaxify.start', function(e, data) {
+		if (data.url.startsWith('login') && config.sessionSharing.loginOverride) {
+			data.url = null;
+			loginRedirect(e);
+		}
+	});
 
-	console.log('nodebb-plugin-quickstart: loaded');
-	// Note how this is shown in the console on the first load of every page
-}());
+	$(window).on('action:ajaxify.end', function(e, data) {
+		if (data.url === 'login' && config.sessionSharing.loginOverride) {
+			$('#content').html('');
+			loginRedirect(e);
+		}
+	});
+
+	function loginRedirect(e) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		window.location.href = config.sessionSharing.loginOverride;
+	};
+});
