@@ -157,8 +157,10 @@ plugin.findUser = function(payload, callback) {
 		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
 		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 
+	var fullname = [firstName, lastName].join(' ').trim();
+
 	if (!username && firstName && lastName) {
-		username = [firstName, lastName].join(' ').trim();
+		username = fullname;
 	} else if (!username && firstName && !lastName) {
 		username = firstName;
 	} else if (!username && !firstName && lastName) {
@@ -177,13 +179,26 @@ plugin.findUser = function(payload, callback) {
 				if (err) {
 					return callback(err);
 				} else if (exists) {
-					async.parallel([
+					async.waterfall([
 						function (next) {
-							user.updateProfile(checks.uid, {
-								username: username,
-								email: email,
-								fullname: [firstName, lastName].join(' ').trim()
-							}, next);
+							user.getUserFields(checks.uid, ['username', 'email', 'fullname'], next);
+						},
+						function (existingFields, next) {
+							var obj = {};
+							
+							if (existingFields.username !== username) {
+								obj.username = username;
+							}
+
+							if (existingFields.email !== email) {
+								obj.email = email;
+							}
+
+							if (existingFields.fullname !== fullname) {
+								obj.fullname = fullname;
+							}
+
+							user.updateProfile(checks.uid, obj, next);
 						},
 						function (next) {
 							if (picture) {
