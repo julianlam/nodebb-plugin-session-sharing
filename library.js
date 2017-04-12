@@ -180,22 +180,22 @@ plugin.findUser = function(payload, callback) {
 					var updatedUserInfo = {};
 
 					if (username) {
-						updatedUserInfo['username'] = username;
+						updatedUserInfo.username = username;
 					}
 
 					if (email) {
-						updatedUserInfo['email'] = email;
+						updatedUserInfo.email = email;
 					}					
 
 					if (picture) {
-						updatedUserInfo['picture'] = picture;
+						updatedUserInfo.picture = picture;
 					}
 
 					if (firstName && lastName) {
-						updatedUserInfo['fullname'] = [firstName, lastName].join(' ').trim();
+						updatedUserInfo.fullname = [firstName, lastName].join(' ').trim();
 					}
 
-					if (Object.keys(obj).length === 0) {
+					if (Object.keys(updatedUserInfo).length === 0) {
 						return db.setObject('user:' + checks.uid, updatedUserInfo, function(err) {
 							callback(err, checks.uid);
 						});
