@@ -154,10 +154,13 @@ plugin.findUser = function(payload, callback) {
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
 		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
 		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
+		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+
+	var fullname = [firstName, lastName].join(' ').trim();
 
 	if (!username && firstName && lastName) {
-		username = [firstName, lastName].join(' ').trim();
+		username = fullname;
 	} else if (!username && firstName && !lastName) {
 		username = firstName;
 	} else if (!username && !firstName && lastName) {
@@ -176,7 +179,37 @@ plugin.findUser = function(payload, callback) {
 				if (err) {
 					return callback(err);
 				} else if (exists) {
-					return callback(null, checks.uid);
+					async.waterfall([
+						function (next) {
+							user.getUserFields(checks.uid, ['username', 'email', 'fullname'], next);
+						},
+						function (existingFields, next) {
+							var obj = {};
+							
+							if (existingFields.username !== username) {
+								obj.username = username;
+							}
+
+							if (existingFields.email !== email) {
+								obj.email = email;
+							}
+
+							if (existingFields.fullname !== fullname) {
+								obj.fullname = fullname;
+							}
+
+							user.updateProfile(checks.uid, obj, next);
+						},
+						function (next) {
+							if (picture) {
+								return db.setObjectField('user:' + checks.uid, 'picture', picture, next);
+							}
+
+							next(null);
+						}
+					], function(err) {
+						return callback(err, checks.uid);
+					});
 				} else {
 					async.series([
 						async.apply(db.deleteObjectField, plugin.settings.name + ':uid', id),	// reference is outdated, user got deleted
