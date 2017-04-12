@@ -154,7 +154,8 @@ plugin.findUser = function(payload, callback) {
 		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
 		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
 		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
+		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
+		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 
 	if (!username && firstName && lastName) {
 		username = [firstName, lastName].join(' ').trim();
@@ -176,6 +177,30 @@ plugin.findUser = function(payload, callback) {
 				if (err) {
 					return callback(err);
 				} else if (exists) {
+					var updatedUserInfo = {};
+
+					if (username) {
+						updatedUserInfo['username'] = username;
+					}
+
+					if (email) {
+						updatedUserInfo['email'] = email;
+					}					
+
+					if (picture) {
+						updatedUserInfo['picture'] = picture;
+					}
+
+					if (firstName && lastName) {
+						updatedUserInfo['fullname'] = [firstName, lastName].join(' ').trim();
+					}
+
+					if (Object.keys(obj).length === 0) {
+						return db.setObject('user:' + checks.uid, updatedUserInfo, function(err) {
+							callback(err, checks.uid);
+						});
+					}
+
 					return callback(null, checks.uid);
 				} else {
 					async.series([
