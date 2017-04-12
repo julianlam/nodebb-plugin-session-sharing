@@ -177,31 +177,24 @@ plugin.findUser = function(payload, callback) {
 				if (err) {
 					return callback(err);
 				} else if (exists) {
-					var updatedUserInfo = {};
+					async.parallel([
+						function (next) {
+							user.updateProfile(checks.uid, {
+								username: username,
+								email: email,
+								fullname: [firstName, lastName].join(' ').trim()
+							}, next);
+						},
+						function (next) {
+							if (picture) {
+								return db.setObjectField('user:' + checks.uid, 'picture', picture, next);
+							}
 
-					if (username) {
-						updatedUserInfo.username = username;
-					}
-
-					if (email) {
-						updatedUserInfo.email = email;
-					}					
-
-					if (picture) {
-						updatedUserInfo.picture = picture;
-					}
-
-					if (firstName && lastName) {
-						updatedUserInfo.fullname = [firstName, lastName].join(' ').trim();
-					}
-
-					if (Object.keys(updatedUserInfo).length === 0) {
-						return db.setObject('user:' + checks.uid, updatedUserInfo, function(err) {
-							callback(err, checks.uid);
-						});
-					}
-
-					return callback(null, checks.uid);
+							next(null);
+						}
+					], function(err) {
+						return callback(err, checks.uid);
+					});
 				} else {
 					async.series([
 						async.apply(db.deleteObjectField, plugin.settings.name + ':uid', id),	// reference is outdated, user got deleted
