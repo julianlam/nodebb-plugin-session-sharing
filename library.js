@@ -200,7 +200,14 @@ plugin.findUser = function(payload, callback) {
 
 							if (Object.keys(obj).length) {
 								obj.uid = checks.uid;
-								user.updateProfile(checks.uid, obj, next);
+								user.updateProfile(checks.uid, obj, function (err) {
+									if (err) {
+										winston.warn('[session-sharing] Unable to update profile information for uid: ' + checks.uid + '(' + err.message + ')');
+									}
+
+									// If it errors out, not that big of a deal, continue anyway.
+									next();
+								});
 							} else {
 								setImmediate(next, null, {});
 							}
