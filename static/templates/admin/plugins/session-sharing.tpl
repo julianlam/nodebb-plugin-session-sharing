@@ -51,6 +51,16 @@
 							that cookie will not resolve into a session and that client will remain a guest.
 						</div>
 					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="updateProfile" name="updateProfile" />
+							<span class="mdl-switch__label"><strong>Automatically update local profile information with information found in shared cookie</strong></span>
+						</label>
+						<div class="help-block">
+							Basic information such as username and id are required, while others are optional (first name, last name, etc.). Enable this setting to allow
+							NodeBB to automatically sync up the local profile with the information provided.
+						</div>
+					</div>
 					<div class="form-group">
 						<label for="logoutRedirect">Logout Redirection</label>
 						<input type="text" class="form-control" id="logoutRedirect" name="logoutRedirect" />

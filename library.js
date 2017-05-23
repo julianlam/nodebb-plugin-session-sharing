@@ -179,49 +179,53 @@ plugin.findUser = function(payload, callback) {
 				if (err) {
 					return callback(err);
 				} else if (exists) {
-					async.waterfall([
-						function (next) {
-							user.getUserFields(checks.uid, ['username', 'email', 'fullname'], next);
-						},
-						function (existingFields, next) {
-							var obj = {};
-							
-							if (existingFields.username !== username) {
-								obj.username = username;
-							}
+					if (plugin.settings.updateProfile === 'on') {
+						async.waterfall([
+							function (next) {
+								user.getUserFields(checks.uid, ['username', 'email', 'fullname'], next);
+							},
+							function (existingFields, next) {
+								var obj = {};
 
-							if (existingFields.email !== email) {
-								obj.email = email;
-							}
+								if (existingFields.username !== username) {
+									obj.username = username;
+								}
 
-							if (existingFields.fullname !== fullname) {
-								obj.fullname = fullname;
-							}
+								if (existingFields.email !== email) {
+									obj.email = email;
+								}
 
-							if (Object.keys(obj).length) {
-								obj.uid = checks.uid;
-								user.updateProfile(checks.uid, obj, function (err, userObj) {
-									if (err) {
-										winston.warn('[session-sharing] Unable to update profile information for uid: ' + checks.uid + '(' + err.message + ')');
-									}
+								if (existingFields.fullname !== fullname) {
+									obj.fullname = fullname;
+								}
 
-									// If it errors out, not that big of a deal, continue anyway.
-									next(null, userObj || existingFields);
-								});
-							} else {
-								setImmediate(next, null, {});
-							}
-						},
-						function (userObj, next) {
-							if (picture) {
-								return db.setObjectField('user:' + checks.uid, 'picture', picture, next);
-							}
+								if (Object.keys(obj).length) {
+									obj.uid = checks.uid;
+									user.updateProfile(checks.uid, obj, function (err, userObj) {
+										if (err) {
+											winston.warn('[session-sharing] Unable to update profile information for uid: ' + checks.uid + '(' + err.message + ')');
+										}
 
-							next(null);
-						}
-					], function(err) {
-						return callback(err, checks.uid);
-					});
+										// If it errors out, not that big of a deal, continue anyway.
+										next(null, userObj || existingFields);
+									});
+								} else {
+									setImmediate(next, null, {});
+								}
+							},
+							function (userObj, next) {
+								if (picture) {
+									return db.setObjectField('user:' + checks.uid, 'picture', picture, next);
+								}
+
+								next(null);
+							}
+						], function(err) {
+							return callback(err, checks.uid);
+						});
+					} else {
+						setImmediate(callback, err, checks.uid);
+					}
 				} else {
 					async.series([
 						async.apply(db.deleteObjectField, plugin.settings.name + ':uid', id),	// reference is outdated, user got deleted
