@@ -101,24 +101,55 @@
 						<label for="payload:username">Username</label>
 						<input type="text" id="payload:username" name="payload:username" title="Username" class="form-control" placeholder="username">
 						<p class="help-block">
-							Supercedes first name / last name. If this is set, then the following two fields are ignored
+							The plugin will try to generate this value from the fullname, if no username is given.
 						</p>
 					</div>
 					<div class="form-group">
-						<label for="payload:firstName">First Name</label>
-						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name" class="form-control" placeholder="firstName">
+						<label for="payload:fullname">Full name</label>
+						<input type="text" id="payload:fullname" name="payload:fullname" title="Full name" class="form-control" placeholder="fullname">
+						<p class="help-block">
+							The plugin will use a combination of first name and last name, if no fullname is given. If given the follwing two fields will be ignored.
+						</p>
 					</div>
 					<div class="form-group">
-						<label for="payload:lastName">Last Name</label>
-						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name" class="form-control" placeholder="lastName">
+						<label for="payload:firstName">First Name (depricated)</label>
+						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name (depricated)" class="form-control" placeholder="firstName">
+					</div>
+					<div class="form-group">
+						<label for="payload:lastName">Last Name (depricated)</label>
+						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name (depricated)" class="form-control" placeholder="lastName">
+					</div>
+					<div class="form-group">
+						<label for="payload:website">Website</label>
+						<input type="text" id="payload:website" name="payload:website" title="Website" class="form-control" placeholder="website">
+					</div>
+					<div class="form-group">
+						<label for="payload:birthday">Birthday</label>
+						<input type="text" id="payload:birthday" name="payload:birthday" title="Birthday" class="form-control" placeholder="birthday">
+					</div>
+					<div class="form-group">
+						<label for="payload:aboutme">About</label>
+						<input type="text" id="payload:aboutme" name="payload:aboutme" title="About" class="form-control" placeholder="aboutme">
+					</div>
+					<div class="form-group">
+						<label for="payload:location">Location</label>
+						<input type="text" id="payload:location" name="payload:location" title="Location" class="form-control" placeholder="location">
+					</div>
+					<div class="form-group">
+						<label for="payload:signature">Signature</label>
+						<input type="text" id="payload:signature" name="payload:signature" title="Signature" class="form-control" placeholder="signature">
+					</div>
+					<div class="form-group">
+						<label for="payload:signature">Group Title</label>
+						<input type="text" id="payload:groupTitle" name="payload:groupTitle" title="Signature" class="form-control" placeholder="groupTitle">
 					</div>
 					<div class="form-group">
 						<label for="payload:picture">Picture</label>
 						<input type="text" id="payload:picture" name="payload:picture" title="Picture" class="form-control" placeholder="picture">
 					</div>
 					<div class="form-group">
-						<label for="payload:parent">Parent Key</label>
-						<input type="text" id="payload:parent" name="payload:parent" title="Parent Key" class="form-control">
+						<label for="payloadParent">Parent Key</label>
+						<input type="text" id="payloadParent" name="payloadParent" title="Parent Key" class="form-control">
 						<p class="help-block">
 							If your user data is contained in a subkey inside of the payload data, specify its key here.
 							Otherwise, this plugin assumes the relevant data is at the root level.

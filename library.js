@@ -17,24 +17,41 @@ var jwt = require('jsonwebtoken');
 var controllers = require('./lib/controllers');
 var nbbAuthController = module.parent.require('./controllers/authentication');
 
+/* all the user profile fields that can be passed to user.updateProfile */
+var profileFields = [
+	'username',
+	'email',
+	'fullname',
+	'website',
+	'location',
+	'groupTitle',
+	'birthday',
+	'signature',
+	'aboutme'
+];
+var payloadKeys = profileFields.concat([
+	'id', // the uniq identifier of that account
+	'firstName', // for backwards compatibillity
+	'lastName', // dto.
+	'picture'
+]);
+
 var plugin = {
-		ready: false,
-		settings: {
-			name: 'appId',
-			cookieName: 'token',
-			cookieDomain: undefined,
-			secret: '',
-			behaviour: 'trust',
-			noRegistration: 'off',
-			'payload:id': 'id',
-			'payload:email': 'email',
-			'payload:username': 'username',
-			'payload:firstName': 'firstName',
-			'payload:lastName': 'lastName',
-			'payload:picture': 'picture',
-			'payload:parent': undefined
-		}
-	};
+	ready: false,
+	settings: {
+		name: 'appId',
+		cookieName: 'token',
+		cookieDomain: undefined,
+		secret: '',
+		behaviour: 'trust',
+		noRegistration: 'off',
+		payloadParent: undefined
+	}
+};
+
+payloadKeys.forEach(function(key) {
+	plugin.settings['payload:' + key] = key;
+});
 
 plugin.init = function(params, callback) {
 	var router = params.router,
@@ -118,24 +135,53 @@ plugin.getUser = function(remoteId, callback) {
 plugin.process = function(token, callback) {
 	async.waterfall([
 		async.apply(jwt.verify, token, plugin.settings.secret),
-		async.apply(plugin.verifyToken),
-		async.apply(plugin.findUser),
+		async.apply(plugin.normalizePayload),
+		async.apply(plugin.findOrCreateUser),
+		async.apply(plugin.updateUserProfile),
 		async.apply(plugin.verifyUser)
 	], callback);
 };
 
-plugin.verifyToken = function(payload, callback) {
-	var parent = plugin.settings['payload:parent'],
-		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
-		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
-		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']];
+plugin.normalizePayload = function(payload, callback) {
+	var userData = {};
 
-	if (!id || (!username && !firstName && !lastName)) {
+	if (plugin.settings.payloadParent) {
+		payload = payload[plugin.settings.payloadParent];
+	}
+
+	if (typeof payload !== 'object') {
+		winston.warn('[session-sharing] the payload is not an object', payload);
 		return callback(new Error('payload-invalid'));
 	}
 
-	callback(null, payload);
+	payloadKeys.forEach(function(key) {
+		var propName = plugin.settings['payload:' + key];
+		if (propName) {
+			userData[key] = payload[propName];
+		}
+	});
+
+	if (!userData.id) {
+		winston.warn('[session-sharing] No user id was given in payload');
+		return callback(new Error('payload-invalid'));
+	}
+
+	userData.fullname = (userData.fullname || [userData.firstName, userData.lastName].join(' ')).trim();
+
+	if (!userData.username) {
+		userData.username = userData.fullname;
+	}
+
+	/* strip username from illegal characters */
+	userData.username = userData.username.trim().replace(/[^'"\s\-.*0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+/, '-');
+
+	if (!userData.username) {
+		winston.warn('[session-sharing] No valid username could be determined');
+		return callback(new Error('payload-invalid'));
+	}
+
+	winston.verbose('[session-sharing] Payload verified');
+	callback(null, userData);
 };
 
 plugin.verifyUser = function(uid, callback) {
@@ -145,141 +191,116 @@ plugin.verifyUser = function(uid, callback) {
 	});
 };
 
-plugin.findUser = function(payload, callback) {
-	// If payload id resolves to a user, return the uid, otherwise register a new user
-	winston.verbose('[session-sharing] Payload verified');
-
-	var parent = plugin.settings['payload:parent'],
-		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
-		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
-		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
-		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
-		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
-
-	var fullname = [firstName, lastName].join(' ').trim();
-
-	if (!username && firstName && lastName) {
-		username = fullname;
-	} else if (!username && firstName && !lastName) {
-		username = firstName;
-	} else if (!username && !firstName && lastName) {
-		username = lastName;
+plugin.findOrCreateUser = function(userData, continueAfterFindOrCreate) {
+	var queries = {};
+	if (userData.email && userData.email.length) {
+		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
 	}
+	queries.uid = async.apply(db.getObjectField, plugin.settings.name + ':uid', userData.id);
 
-	async.parallel({
-		uid: async.apply(db.getObjectField, plugin.settings.name + ':uid', id),
-		mergeUid: async.apply(db.sortedSetScore, 'email:uid', email)
-	}, function(err, checks) {
-		if (err) { return callback(err); }
+	async.parallel(queries, function(err, checks) {
+		if (err) { return continueAfterFindOrCreate(err); }
 
-		if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
-			// Ensure the uid exists
-			user.exists(parseInt(checks.uid, 10), function(err, exists) {
-				if (err) {
-					return callback(err);
-				} else if (exists) {
-					if (plugin.settings.updateProfile === 'on') {
-						async.waterfall([
-							function (next) {
-								user.getUserFields(checks.uid, ['username', 'email', 'fullname'], next);
-							},
-							function (existingFields, next) {
-								var obj = {};
-
-								if (existingFields.username !== username) {
-									obj.username = username;
-								}
-
-								if (existingFields.email !== email) {
-									obj.email = email;
-								}
-
-								if (existingFields.fullname !== fullname) {
-									obj.fullname = fullname;
-								}
-
-								if (Object.keys(obj).length) {
-									obj.uid = checks.uid;
-									user.updateProfile(checks.uid, obj, function (err, userObj) {
-										if (err) {
-											winston.warn('[session-sharing] Unable to update profile information for uid: ' + checks.uid + '(' + err.message + ')');
-										}
-
-										// If it errors out, not that big of a deal, continue anyway.
-										next(null, userObj || existingFields);
-									});
-								} else {
-									setImmediate(next, null, {});
-								}
-							},
-							function (userObj, next) {
-								if (picture) {
-									return db.setObjectField('user:' + checks.uid, 'picture', picture, next);
-								}
-
-								next(null);
-							}
-						], function(err) {
-							return callback(err, checks.uid);
+		async.waterfall([
+			/* check if found something to work with */
+			function(next) {
+				if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
+					var uid = parseInt(checks.uid, 10);
+					/* check if the user with the given id actually exists */
+					return user.exists(uid, function(err, exists) {
+						/* ignore errors, but assume the user doesn't exist  */
+						if (err) {
+							winston.warn('[session-sharing] Error while testing user existance', err);
+							return next(null, null);
+						}
+						if (exists) {
+							return next(null, uid);
+						}
+						/* reference is outdated, user got deleted */
+						db.deleteObjectField(plugin.settings.name + ':uid', userData.id, function(err) {
+							next(err, null);
 						});
-					} else {
-						setImmediate(callback, err, checks.uid);
-					}
-				} else {
-					async.series([
-						async.apply(db.deleteObjectField, plugin.settings.name + ':uid', id),	// reference is outdated, user got deleted
-						async.apply(plugin.createUser, payload)
-					], function(err, data) {
-						callback(err, data[1]);
 					});
 				}
-			});
-		} else if (email && email.length && checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
-			winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
-			db.setObjectField(plugin.settings.name + ':uid', id, checks.mergeUid, function (err) {
-				callback(err, checks.mergeUid);
-			});
-		} else {
-			// No match, create a new user
-			plugin.createUser(payload, callback);
-		}
+				if (checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
+					winston.info('[session-sharing] Found user via their email, associating this id (' + userData.id + ') with their NodeBB account');
+					return db.setObjectField(plugin.settings.name + ':uid', userData.id, checks.mergeUid, function (err) {
+						next(err, parseInt(checks.mergeUid, 10));
+					});
+				}
+				setImmediate(next, null, null);
+			},
+			/* create the user from payload if necessary */
+			function(uid, next) {
+				winston.debug('createUser?', !uid);
+				if (! uid) {
+					if (plugin.settings.noRegistration === 'on') {
+						return next(new Error('[no-match]'));
+					}
+					return plugin.createUser(userData, function(err, uid) {
+						next(err, uid, userData, true);
+					});
+				}
+				setImmediate(next, null, uid, userData, false);
+			}			
+		], continueAfterFindOrCreate);
 	});
 };
 
-plugin.createUser = function(payload, callback) {
-	if (plugin.settings.noRegistration === 'on') {
-		return callback(new Error('no-match'));
+plugin.updateUserProfile = function(uid, userData, isNewUser, continueAfterUpdateProfile) {
+	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
+
+	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
+	if (!isNewUser && plugin.settings.updateProfile !== 'on') {
+		return setImmediate(continueAfterUpdateProfile, null, uid);
 	}
 
-	var parent = plugin.settings['payload:parent'],
-		id = parent ? payload[parent][plugin.settings['payload:id']] : payload[plugin.settings['payload:id']],
-		email = parent ? payload[parent][plugin.settings['payload:email']] : payload[plugin.settings['payload:email']],
-		username = parent ? payload[parent][plugin.settings['payload:username']] : payload[plugin.settings['payload:username']],
-		firstName = parent ? payload[parent][plugin.settings['payload:firstName']] : payload[plugin.settings['payload:firstName']],
-		lastName = parent ? payload[parent][plugin.settings['payload:lastName']] : payload[plugin.settings['payload:lastName']],
-		picture = parent ? payload[parent][plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+	async.waterfall([
+		function (next) {
+			user.getUserFields(uid, profileFields, next);
+		},
+		function (existingFields, next) {
+			var obj = {};
 
-	if (!username && firstName && lastName) {
-		username = [firstName, lastName].join(' ').trim();
-	} else if (!username && firstName && !lastName) {
-		username = firstName;
-	} else if (!username && !firstName && lastName) {
-		username = lastName;
-	}
+			profileFields.forEach(function (field) {
+				if (typeof userData[field] !== 'undefined' && existingFields[field] !== userData[field]) {
+					obj[field] = userData[field];
+				}
+			});
 
+			if (Object.keys(obj).length) {
+				winston.debug('[session-sharing] Updating profile fields:', obj);
+				obj.uid = uid;
+				return user.updateProfile(uid, obj, function (err, userObj) {
+					if (err) {
+						winston.warn('[session-sharing] Unable to update profile information for uid: ' + uid + '(' + err.message + ')');
+					}
+
+					// If it errors out, not that big of a deal, continue anyway.
+					next(null, userObj || existingFields);
+				});
+			}
+			setImmediate(next, null, {});
+		},
+		function (userObj, next) {
+			if (userData.picture) {
+				return db.setObjectField('user:' + uid, 'picture', userData.picture, next);
+			}
+
+			setImmediate(next, null);
+		}
+	], function(err) {
+		return continueAfterUpdateProfile(err, uid);
+	});
+};
+
+plugin.createUser = function(userData, callback) {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
-	username = username.trim().replace(/[^'"\s\-.*0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+/, '-');
 
-	user.create({
-		username: username,
-		email: email,
-		picture: picture,
-		fullname: [firstName, lastName].join(' ').trim()
-	}, function(err, uid) {
+	user.create(_.pick(userData, profileFields), function(err, uid) {
 		if (err) { return callback(err); }
 
-		db.setObjectField(plugin.settings.name + ':uid', id, uid, function (err) {
+		db.setObjectField(plugin.settings.name + ':uid', userData.id, uid, function (err) {
 			callback(err, uid);
 		});
 	});
@@ -397,6 +418,12 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:email']] = 'testUser@example.org';
 	payload[plugin.settings['payload:firstName']] = 'Test';
 	payload[plugin.settings['payload:lastName']] = 'User';
+	payload[plugin.settings['payload:location']] = 'Testlocation';
+	payload[plugin.settings['payload:birtday']] = '1981-04-01';
+	payload[plugin.settings['payload:website']] = 'nodebb.org';
+	payload[plugin.settings['payload:aboutme']] = 'I am just testing';
+	payload[plugin.settings['payload:signature']] = 'T User';
+	payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
 
 	var token = jwt.sign(payload, plugin.settings.secret);
 	res.cookie(plugin.settings.cookieName, token, {
@@ -429,7 +456,7 @@ plugin.reloadSettings = function(callback) {
 			return callback();
 		}
 
-		if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName']) {
+		if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName'] && !settings['payload:fullname']) {
 			settings['payload:username'] = 'username';
 		}
 
