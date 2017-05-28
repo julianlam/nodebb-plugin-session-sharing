@@ -268,7 +268,7 @@ plugin.createUser = function(payload, callback) {
 		username = lastName;
 	}
 
-	winston.info('[session-sharing] No user found, creating a new user for this login');
+	winston.verbose('[session-sharing] No user found, creating a new user for this login');
 	username = username.trim().replace(/[^'"\s\-.*0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+/, '-');
 
 	user.create({
@@ -348,7 +348,7 @@ plugin.addMiddleware = function(req, res, next) {
 					return;
 				}
 
-				winston.info('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
+				winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 				req.uid = uid;
 				nbbAuthController.doLogin(req, uid, function () {
 					req.session.loginLock = true;
