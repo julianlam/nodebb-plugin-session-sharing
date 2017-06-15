@@ -191,7 +191,7 @@ plugin.verifyUser = function(uid, callback) {
 	});
 };
 
-plugin.findOrCreateUser = function(userData, continueAfterFindOrCreate) {
+plugin.findOrCreateUser = function(userData, callback) {
 	var queries = {};
 	if (userData.email && userData.email.length) {
 		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
@@ -199,7 +199,7 @@ plugin.findOrCreateUser = function(userData, continueAfterFindOrCreate) {
 	queries.uid = async.apply(db.getObjectField, plugin.settings.name + ':uid', userData.id);
 
 	async.parallel(queries, function(err, checks) {
-		if (err) { return continueAfterFindOrCreate(err); }
+		if (err) { return callback(err); }
 
 		async.waterfall([
 			/* check if found something to work with */
@@ -243,16 +243,16 @@ plugin.findOrCreateUser = function(userData, continueAfterFindOrCreate) {
 				}
 				setImmediate(next, null, uid, userData, false);
 			}			
-		], continueAfterFindOrCreate);
+		], callback);
 	});
 };
 
-plugin.updateUserProfile = function(uid, userData, isNewUser, continueAfterUpdateProfile) {
+plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
 
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
 	if (!isNewUser && plugin.settings.updateProfile !== 'on') {
-		return setImmediate(continueAfterUpdateProfile, null, uid);
+		return setImmediate(callback, null, uid);
 	}
 
 	async.waterfall([
@@ -290,7 +290,7 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, continueAfterUpdat
 			setImmediate(next, null);
 		}
 	], function(err) {
-		return continueAfterUpdateProfile(err, uid);
+		return callback(err, uid);
 	});
 };
 
@@ -419,11 +419,18 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:firstName']] = 'Test';
 	payload[plugin.settings['payload:lastName']] = 'User';
 	payload[plugin.settings['payload:location']] = 'Testlocation';
-	payload[plugin.settings['payload:birtday']] = '1981-04-01';
+	payload[plugin.settings['payload:birthday']] = '04/01/1981';
 	payload[plugin.settings['payload:website']] = 'nodebb.org';
 	payload[plugin.settings['payload:aboutme']] = 'I am just testing';
 	payload[plugin.settings['payload:signature']] = 'T User';
 	payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
+
+	if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
+		var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
+		var newPayload = {};
+		newPayload[parentKey] = payload;
+		payload = newPayload;
+	}
 
 	var token = jwt.sign(payload, plugin.settings.secret);
 	res.cookie(plugin.settings.cookieName, token, {
@@ -454,6 +461,14 @@ plugin.reloadSettings = function(callback) {
 		if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
 			winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
 			return callback();
+		}
+
+		// If "payload:parent" is found, but payloadParent is not, update the latter and delete the former
+		if (!settings['payloadParent'] && settings['payload:parent']) {
+			winston.verbose('[session-sharing] Migrating payload:parent to payloadParent');
+			settings.payloadParent = settings['payload:parent'];
+			db.setObjectField('settings:session-sharing', 'payloadParent', settings.payloadParent);
+			db.deleteObjectField('settings:session-sharing', 'payload:parent');
 		}
 
 		if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName'] && !settings['payload:fullname']) {

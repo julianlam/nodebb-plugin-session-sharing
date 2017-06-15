@@ -108,16 +108,16 @@
 						<label for="payload:fullname">Full name</label>
 						<input type="text" id="payload:fullname" name="payload:fullname" title="Full name" class="form-control" placeholder="fullname">
 						<p class="help-block">
-							The plugin will use a combination of first name and last name, if no fullname is given. If given the follwing two fields will be ignored.
+							The plugin will use a combination of first name and last name, if no fullname is given. If given, the following two fields will be ignored.
 						</p>
 					</div>
 					<div class="form-group">
-						<label for="payload:firstName">First Name (depricated)</label>
-						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name (depricated)" class="form-control" placeholder="firstName">
+						<label for="payload:firstName">First Name (deprecated)</label>
+						<input type="text" id="payload:firstName" name="payload:firstName" title="First Name (deprecated)" class="form-control" placeholder="firstName">
 					</div>
 					<div class="form-group">
-						<label for="payload:lastName">Last Name (depricated)</label>
-						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name (depricated)" class="form-control" placeholder="lastName">
+						<label for="payload:lastName">Last Name (deprecated)</label>
+						<input type="text" id="payload:lastName" name="payload:lastName" title="Last Name (deprecated)" class="form-control" placeholder="lastName">
 					</div>
 					<div class="form-group">
 						<label for="payload:website">Website</label>
