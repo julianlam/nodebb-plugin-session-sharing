@@ -235,7 +235,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 				winston.debug('createUser?', !uid);
 				if (! uid) {
 					if (plugin.settings.noRegistration === 'on') {
-						return next(new Error('[no-match]'));
+						return next(new Error('no-match'));
 					}
 					return plugin.createUser(userData, function(err, uid) {
 						next(err, uid, userData, true);
