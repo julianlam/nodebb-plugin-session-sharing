@@ -18,5 +18,8 @@
 	"acpScripts": [
 		"static/lib/admin.js"
 	],
+	"upgrades": [
+		"upgrades/session_sharing_hash_to_zset.js"
+	],
 	"templates": "static/templates"
 }

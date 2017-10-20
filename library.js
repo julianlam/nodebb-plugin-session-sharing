@@ -91,13 +91,12 @@ SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
 	payload.length = uids.length;
 
 	if (uids.length) {
-		db.getObject(plugin.settings.name + ':uid', function(err, hash) {
-			for(var remoteId in hash) {
-				idx = uids.indexOf(hash[remoteId]);
-				if (hash.hasOwnProperty(remoteId) && idx !== -1) {
-					payload[idx] = remoteId;
-				}
-			}
+		async.map(uids, function (uid, next) {
+			db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid, next);
+		}, function (err, remoteIds) {
+			remoteIds.forEach(function (remoteId, idx) {
+				payload[idx] = remoteId;
+			});
 
 			callback(null, payload);
 		});
@@ -121,7 +120,7 @@ SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callbac
  */
 plugin.getUser = function(remoteId, callback) {
 	async.waterfall([
-		async.apply(db.getObjectField, plugin.settings.name + ':uid', remoteId),
+		async.apply(db.sortedSetScore, plugin.settings.name + ':uid', remoteId),
 		function(uid, next) {
 			if (uid) {
 				user.getUserFields(uid, ['username', 'userslug', 'picture'], next);
@@ -196,7 +195,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 	if (userData.email && userData.email.length) {
 		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
 	}
-	queries.uid = async.apply(db.getObjectField, plugin.settings.name + ':uid', userData.id);
+	queries.uid = async.apply(db.sortedSetScore, plugin.settings.name + ':uid', userData.id);
 
 	async.parallel(queries, function(err, checks) {
 		if (err) { return callback(err); }
@@ -217,14 +216,14 @@ plugin.findOrCreateUser = function(userData, callback) {
 							return next(null, uid);
 						}
 						/* reference is outdated, user got deleted */
-						db.deleteObjectField(plugin.settings.name + ':uid', userData.id, function(err) {
+						db.sortedSetRemove(plugin.settings.name + ':uid', userData.id, function(err) {
 							next(err, null);
 						});
 					});
 				}
 				if (checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
 					winston.info('[session-sharing] Found user via their email, associating this id (' + userData.id + ') with their NodeBB account');
-					return db.setObjectField(plugin.settings.name + ':uid', userData.id, checks.mergeUid, function (err) {
+					return db.sortedSetAdd(plugin.settings.name + ':uid', checks.mergeUid, userData.id, function (err) {
 						next(err, parseInt(checks.mergeUid, 10));
 					});
 				}
@@ -300,7 +299,7 @@ plugin.createUser = function(userData, callback) {
 	user.create(_.pick(userData, profileFields), function(err, uid) {
 		if (err) { return callback(err); }
 
-		db.setObjectField(plugin.settings.name + ':uid', userData.id, uid, function (err) {
+		db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id, function (err) {
 			callback(err, uid);
 		});
 	});
