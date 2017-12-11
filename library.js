@@ -333,63 +333,65 @@ plugin.addMiddleware = function(req, res, next) {
 		return next();
 	} else {
 		// Hook into ip blacklist functionality in core
-		if (meta.blacklist.test(req.ip)) {
-			if (hasSession) {
-				req.logout();
-				res.locals.fullRefresh = true;
-			}
-
-			plugin.cleanup({ res: res });
-			return handleGuest.apply(null, arguments);
-		}
-
-		if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
-			return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
-				if (err) {
-					switch(err.message) {
-						case 'banned':
-							winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-							next();
-							break;
-						case 'payload-invalid':
-							winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-							next();
-							break;
-						case 'no-match':
-							winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-							handleGuest.call(null, req, res, next);
-							break;
-						default:
-							winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
-							next();
-							break;
-					}
-
-					return;
-				}
-
-				winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
-				req.uid = uid;
-				nbbAuthController.doLogin(req, uid, function () {
-					req.session.loginLock = true;
-					res.redirect(req.originalUrl);
-				});
-			});
-		} else if (hasSession) {
-			// Has login session but no cookie, can assume "revalidate" behaviour
-			user.isAdministrator(req.user.uid, function(err, isAdmin) {
-				if (!isAdmin) {
+		meta.blacklist.test(req.ip, function (err) {
+			if (err) {
+				if (hasSession) {
 					req.logout();
 					res.locals.fullRefresh = true;
-					handleGuest(req, res, next);
-				} else {
-					// Admins can bypass
-					return next();
 				}
-			});
-		} else {
-			handleGuest.apply(null, arguments);
-		}
+
+				plugin.cleanup({ res: res });
+				return handleGuest.call(null, req, res, next);
+			} else {
+				if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
+					return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
+						if (err) {
+							switch(err.message) {
+								case 'banned':
+									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+									next();
+									break;
+								case 'payload-invalid':
+									winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+									next();
+									break;
+								case 'no-match':
+									winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+									handleGuest.call(null, req, res, next);
+									break;
+								default:
+									winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+									next();
+									break;
+							}
+		
+							return;
+						}
+		
+						winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
+						req.uid = uid;
+						nbbAuthController.doLogin(req, uid, function () {
+							req.session.loginLock = true;
+							res.redirect(req.originalUrl);
+						});
+					});
+				} else if (hasSession) {
+					// Has login session but no cookie, can assume "revalidate" behaviour
+					user.isAdministrator(req.user.uid, function(err, isAdmin) {
+						if (!isAdmin) {
+							req.logout();
+							res.locals.fullRefresh = true;
+							handleGuest(req, res, next);
+						} else {
+							// Admins can bypass
+							return next();
+						}
+					});
+				} else {
+					handleGuest.call(null, req, res, next);
+				}
+			}
+		});
 	}
 };
 
