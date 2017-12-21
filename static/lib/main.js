@@ -33,4 +33,31 @@ $(document).ready(function() {
 
 		window.location.href = config.sessionSharing.loginOverride;
 	};
+
+    $(window).on('action:ajaxify.end', function(ev, data) {
+        if (config.sessionSharing.registerOverride) {
+            $('a[href="/register"]').off('click').on('click', registerRedirect);
+        }
+    });
+
+    $(window).on('action:ajaxify.start', function(e, data) {
+        if (data.url.startsWith('register') && config.sessionSharing.registerOverride) {
+            data.url = null;
+            registerRedirect(e);
+        }
+    });
+
+    $(window).on('action:ajaxify.end', function(e, data) {
+        if (data.url === 'register' && config.sessionSharing.registerOverride) {
+            $('#content').html('');
+            registerRedirect(e);
+        }
+    });
+
+    function registerRedirect(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        window.location.href = config.sessionSharing.registerOverride;
+    };
 });
