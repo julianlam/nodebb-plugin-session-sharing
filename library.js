@@ -72,7 +72,8 @@ plugin.init = function(params, callback) {
 plugin.appendConfig = function(config, callback) {
 	config.sessionSharing = {
 		logoutRedirect: plugin.settings.logoutRedirect,
-		loginOverride: plugin.settings.loginOverride
+		loginOverride: plugin.settings.loginOverride,
+		registerOverride: plugin.settings.registerOverride
 	};
 
 	callback(null, config);
