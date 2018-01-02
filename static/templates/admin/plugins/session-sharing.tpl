@@ -77,7 +77,7 @@
 						</p>
 					</div>
 					<div class="form-group">
-						<label for="loginOverride">Register Override</label>
+						<label for="registerOverride">Register Override</label>
 						<input type="text" class="form-control" id="registerOverride" name="registerOverride" />
 						<p class="help-block">
 							If set, users clicking the "Register" button will be redirected to this link instead
