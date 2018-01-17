@@ -61,6 +61,18 @@
 							NodeBB to automatically sync up the local profile with the information provided.
 						</div>
 					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupJoin" name="syncGroupJoin" />
+							<span class="mdl-switch__label"><strong>Automatically join groups if present in payload</strong></span>
+						</label>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupLeave" name="syncGroupLeave" />
+							<span class="mdl-switch__label"><strong>Automatically leave groups if not present in payload</strong></span>
+						</label>
+					</div>
 					<div class="form-group">
 						<label for="logoutRedirect">Logout Redirection</label>
 						<input type="text" class="form-control" id="logoutRedirect" name="logoutRedirect" />

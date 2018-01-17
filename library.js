@@ -4,6 +4,7 @@
 
 var meta = module.parent.require('./meta');
 var user = module.parent.require('./user');
+var groups = module.parent.require('./groups');
 var SocketPlugins = require.main.require('./src/socket.io/plugins');
 
 var _ = module.parent.require('underscore');
@@ -33,7 +34,8 @@ var payloadKeys = profileFields.concat([
 	'id', // the uniq identifier of that account
 	'firstName', // for backwards compatibillity
 	'lastName', // dto.
-	'picture'
+	'picture',
+	'groups',
 ]);
 
 var plugin = {
@@ -45,7 +47,7 @@ var plugin = {
 		secret: '',
 		behaviour: 'trust',
 		noRegistration: 'off',
-		payloadParent: undefined
+		payloadParent: undefined,
 	}
 };
 
@@ -138,6 +140,7 @@ plugin.process = function(token, callback) {
 		async.apply(plugin.normalizePayload),
 		async.apply(plugin.findOrCreateUser),
 		async.apply(plugin.updateUserProfile),
+		async.apply(plugin.updateUserGroups),
 		async.apply(plugin.verifyUser)
 	], callback);
 };
@@ -252,7 +255,7 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
 	if (!isNewUser && plugin.settings.updateProfile !== 'on') {
-		return setImmediate(callback, null, uid);
+		return setImmediate(callback, null, uid, userData, isNewUser);
 	}
 
 	async.waterfall([
@@ -290,8 +293,61 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 			setImmediate(next, null);
 		}
 	], function(err) {
+		return callback(err, uid, userData, isNewUser);
+	});
+};
+
+plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
+	async.waterfall([
+		// Retrieve user groups
+		async.apply(groups.getUserGroupsFromSet, 'groups:createtime', [uid]),
+		function (groups, next) {
+			// Normalize user group data to just group names
+			groups = groups[0].map(function (groupObj) {
+				return groupObj.name;
+			});
+
+			// Build join and leave arrays
+			var join = userData.groups.filter(function (name) {
+				return !groups.includes(name);
+			});
+			var leave = groups.filter(function (name) {
+				// `registered-users` is always a joined group
+				if (name === 'registered-users') {
+					return false;
+				}
+
+				return !userData.groups.includes(name);
+			});
+
+			executeJoinLeave(uid, join, leave, next);
+		}
+	], function (err) {
 		return callback(err, uid);
 	});
+};
+
+function executeJoinLeave (uid, join, leave, callback) {
+	async.parallel([
+		function (next) {
+			if (plugin.settings.syncGroupJoin !== 'on') {
+				return setImmediate(next);
+			}
+
+			async.each(join, function (name, next) {
+				groups.join(name, uid, next);
+			}, next);
+		},
+		function (next) {
+			if (plugin.settings.syncGroupLeave !== 'on') {
+				return setImmediate(next);
+			}
+
+			async.each(leave, function (name, next) {
+				groups.leave(name, uid, next);
+			}, next);
+		}
+	], callback);
 };
 
 plugin.createUser = function(userData, callback) {
@@ -426,6 +482,7 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:aboutme']] = 'I am just testing';
 	payload[plugin.settings['payload:signature']] = 'T User';
 	payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
+	payload[plugin.settings['payload:groups']] = ['test-group'];
 
 	if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
 		var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];

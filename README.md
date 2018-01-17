@@ -70,7 +70,10 @@ You can also add `email`, `firstName`, `lastName`, `picture` to the payload if y
 `firstName` or `lastName`, `username` is no longer required. These values don't have to match exactly,
 you can customise the property names in the plugin settings.
 
-Encode the payload with a secret of your choice, and configure the plugin by specifying the secret, so
+Additionally, if group syncing is enabled, you can specify `groups` and list groups that the user is in.
+They will be joined (or left) automatically based on what is found in the payload.
+
+**Continuing on...** Encode the payload with a secret of your choice, and configure the plugin by specifying the secret, so
 it can properly decode and verify the JWT signature.
 
 **Note**: In some libraries, the payload is encoded like so:
