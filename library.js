@@ -183,6 +183,11 @@ plugin.normalizePayload = function(payload, callback) {
 		return callback(new Error('payload-invalid'));
 	}
 
+	if (userData.hasOwnProperty('groups') && !Array.isArray(userData.groups)) {
+		winston.warn('[session-sharing] Array expected for `groups` in JWT payload. Ignoring.');
+		delete userData.groups;
+	}
+
 	winston.verbose('[session-sharing] Payload verified');
 	callback(null, userData);
 };
@@ -298,6 +303,10 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 };
 
 plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
+	if (!userData.groups || !userData.groups.length) {
+		return setImmediate(callback, null, uid);
+	}
+
 	async.waterfall([
 		// Retrieve user groups
 		async.apply(groups.getUserGroupsFromSet, 'groups:createtime', [uid]),
