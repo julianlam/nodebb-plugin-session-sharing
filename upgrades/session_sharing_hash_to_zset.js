@@ -20,17 +20,8 @@ module.exports = {
 				settings = _settings;
 
 				if (settings.name) {
-					db.getSortedSetRange(settings.name + ':uid', 0, -1, function (err) {
-						if (err && err.code === 'WRONGTYPE') {
-							// Proceed with retrieving hash data
-							db.getObject(settings.name + ':uid', next);
-						} else if (err) {
-							next(err);
-						} else {
-							// No upgrade needed
-							next(true);
-						}
-					})
+					// session-sharing is set up, execute upgrade
+					db.getObject(settings.name + ':uid', next);
 				} else {
 					// No name set, skip upgrade as completed.
 					setImmediate(next, true);
