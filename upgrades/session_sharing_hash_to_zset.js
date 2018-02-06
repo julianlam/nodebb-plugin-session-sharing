@@ -19,11 +19,11 @@ module.exports = {
 			function (_settings, next) {
 				settings = _settings;
 
-				if (settings.name) {
+				if (settings.secret) {
 					// session-sharing is set up, execute upgrade
-					db.getObject(settings.name + ':uid', next);
+					db.getObject(settings.secret + ':uid', next);
 				} else {
-					// No name set, skip upgrade as completed.
+					// No secret set, skip upgrade as completed.
 					setImmediate(next, true);
 				}
 			},
