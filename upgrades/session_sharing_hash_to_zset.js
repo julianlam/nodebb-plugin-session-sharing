@@ -21,7 +21,7 @@ module.exports = {
 
 				if (settings.secret) {
 					// session-sharing is set up, execute upgrade
-					db.getObject(settings.secret + ':uid', next);
+					db.getObject((settings.name || 'appId') + ':uid', next);
 				} else {
 					// No secret set, skip upgrade as completed.
 					setImmediate(next, true);
@@ -30,14 +30,14 @@ module.exports = {
 
 			// Save a backup of the hash data in another key
 			function (hashData, next) {
-				db.setObject('backup:' + settings.name + ':uid', hashData, function (err) {
+				db.setObject('backup:' + (settings.name || 'appId') + ':uid', hashData, function (err) {
 					next(err, hashData);
 				});
 			},
 
 			// Delete the original hash
 			function (hashData, next) {
-				db.delete(settings.name + ':uid', function (err) {
+				db.delete((settings.name || 'appId') + ':uid', function (err) {
 					next(err, hashData);
 				});
 			},
@@ -53,7 +53,7 @@ module.exports = {
 					}
 				}
 
-				db.sortedSetAdd(settings.name + ':uid', scores, values, next);
+				db.sortedSetAdd((settings.name || 'appId') + ':uid', scores, values, next);
 			}
 		], function (err) {
 			if (typeof err === 'boolean') {
