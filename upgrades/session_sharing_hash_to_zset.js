@@ -31,7 +31,6 @@ module.exports = {
 
 			// Save a backup of the hash data in another key
 			function (hashData, next) {
-				winston.info('backing up old data');
 				db.rename((settings.name || 'appId') + ':uid', 'backup:' + (settings.name || 'appId') + ':uid', function (err) {
 					next(err, hashData);
 				});
