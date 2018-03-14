@@ -31,18 +31,10 @@ module.exports = {
 
 			// Save a backup of the hash data in another key
 			function (hashData, next) {
-				next(null, hashData);
-				// db.setObject('backup:' + (settings.name || 'appId') + ':uid', hashData, function (err) {
-				//	next(err, hashData);
-				// });
-			},
-
-			// Delete the original hash
-			function (hashData, next) {
-				next(null, hashData);
-				// db.delete((settings.name || 'appId') + ':uid', function (err) {
-				//	next(err, hashData);
-				// });
+				winston.info('backing up old data');
+				db.rename((settings.name || 'appId') + ':uid', 'backup:' + (settings.name || 'appId') + ':uid', function (err) {
+					next(err, hashData);
+				});
 			},
 
 			// Save new zset
@@ -55,6 +47,7 @@ module.exports = {
 						values.push(remoteId);
 					}
 				}
+				progress.total = values.length;
 				winston.info('saving into db');
 				async.eachSeries(values, function (value, next) {
 					progress.incr();
