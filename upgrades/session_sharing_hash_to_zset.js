@@ -1,6 +1,6 @@
 'use strict';
 
-var db = require.main.require('./src/database');
+var db = module.parent.require('./database');
 
 var async = module.parent.require('async');
 var winston = module.parent.require('winston');
@@ -19,7 +19,7 @@ module.exports = {
 			async.apply(meta.settings.get, 'session-sharing'),
 			function (_settings, next) {
 				settings = _settings;
-				winston.info('getting data');
+				winston.verbose('getting data');
 				if (settings.secret) {
 					// session-sharing is set up, execute upgrade
 					db.getObject((settings.name || 'appId') + ':uid', next);
@@ -38,7 +38,7 @@ module.exports = {
 
 			// Save new zset
 			function (hashData, next) {
-				winston.info('constructing array');
+				winston.verbose('constructing array');
 				var values = [];
 				
 				for(var remoteId in hashData) {
@@ -47,7 +47,7 @@ module.exports = {
 					}
 				}
 				progress.total = values.length;
-				winston.info('saving into db');
+				winston.verbose('saving into db');
 				async.eachSeries(values, function (value, next) {
 					progress.incr();
 					db.sortedSetAdd((settings.name || 'appId') + ':uid', hashData[value], value, next);	
@@ -57,6 +57,9 @@ module.exports = {
 			if (typeof err === 'boolean') {
 				// No upgrade needed
 				return callback();
+			} else if (err.message === 'WRONGTYPE Operation against a key holding the wrong kind of value') {
+				// Likely script already run, all is well
+				err = null;
 			}
 			
 			callback(err);
