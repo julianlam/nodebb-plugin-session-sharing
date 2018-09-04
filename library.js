@@ -375,7 +375,7 @@ plugin.addMiddleware = function(req, res, next) {
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
-			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(nconf.get('url') + req.originalUrl)));
+			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl) ));
 		} else if (res.locals.fullRefresh === true) {
 			res.redirect(nconf.get('relative_path') + req.url);
 		} else {
