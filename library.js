@@ -415,6 +415,10 @@ plugin.addMiddleware = function(req, res, next) {
 							switch(err.message) {
 								case 'banned':
 									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+									req.session.sessionSharing = {
+										banned: true,
+										uid: uid,
+									};
 									next();
 									break;
 								case 'payload-invalid':
@@ -550,6 +554,24 @@ plugin.reloadSettings = function(callback) {
 
 		callback();
 	});
+};
+
+plugin.appendTemplate = (data, callback) => {
+	if (data.req.session.sessionSharing && data.req.session.sessionSharing.banned) {
+		user.getLatestBanInfo(data.req.session.sessionSharing.uid, (err, info) => {
+			data.templateData.sessionSharingBan = {
+				ban: info,
+				banned: true,
+			};
+
+			delete data.req.session.sessionSharing;
+			callback(null, data);
+		});
+
+		return;
+	}
+
+	setImmediate(callback, null, data);
 };
 
 module.exports = plugin;
