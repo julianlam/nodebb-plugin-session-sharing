@@ -12,6 +12,7 @@ var winston = module.parent.require('winston');
 var async = require('async');
 var db = module.parent.require('./database');
 var nconf = module.parent.require('nconf');
+var plugins = module.parent.require('./plugins');
 
 var jwt = require('jsonwebtoken');
 
