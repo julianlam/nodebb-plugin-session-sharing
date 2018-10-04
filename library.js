@@ -189,7 +189,12 @@ plugin.normalizePayload = function(payload, callback) {
 	}
 
 	winston.verbose('[session-sharing] Payload verified');
-	callback(null, userData);
+	plugins.fireHook('filter:sessionSharing.normalizePayload', {
+		payload: payload,
+		userData: userData
+	}, function(err, data) {
+		callback(err, data.userData);
+	});
 };
 
 plugin.verifyUser = function(uid, callback) {
@@ -412,6 +417,21 @@ plugin.addMiddleware = function(req, res, next) {
 				if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 					return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
 						if (err) {
+							if (plugins.hasListeners('filter:sessionSharing.error')) {
+							    return plugins.fireHook('filter:sessionSharing.error', {
+								error: err,
+								uid: uid,
+								res: res,
+								settings: plugin.settings
+							    }, function(err, data) {
+								if (data.handleGuest) {
+								    return handleGuest.call(null, req, res, next);
+								} 
+
+								next();
+							    });
+							}
+							
 							switch(err.message) {
 								case 'banned':
 									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
