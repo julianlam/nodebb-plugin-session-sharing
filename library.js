@@ -423,7 +423,8 @@ plugin.addMiddleware = function(req, res, next) {
 								error: err,
 								uid: uid,
 								res: res,
-								settings: plugin.settings
+								settings: plugin.settings,
+								handleGuest: false
 							    }, function(err, data) {
 								if (data.handleGuest) {
 								    return handleGuest.call(null, req, res, next);
