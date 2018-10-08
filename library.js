@@ -418,46 +418,37 @@ plugin.addMiddleware = function(req, res, next) {
 				if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 					return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
 						if (err) {
-							if (plugins.hasListeners('filter:sessionSharing.error')) {
-							    return plugins.fireHook('filter:sessionSharing.error', {
-								error: err,
-								uid: uid,
-								res: res,
-								settings: plugin.settings,
-								handleGuest: false
-							    }, function(err, data) {
-								if (data.handleGuest) {
-								    return handleGuest.call(null, req, res, next);
-								} 
+							var handleAsGuest = false;
 
-								next();
-							    });
+							switch (err.message) {
+							   case 'banned':
+							       winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+							       break;
+							   case 'payload-invalid':
+							       winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+							       break;
+							   case 'no-match':
+							       winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+							       handleAsGuest = true;
+							       break;
+							   default:
+							       winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+							       break;
 							}
-							
-							switch(err.message) {
-								case 'banned':
-									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-									req.session.sessionSharing = {
-										banned: true,
-										uid: uid,
-									};
-									next();
-									break;
-								case 'payload-invalid':
-									winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-									next();
-									break;
-								case 'no-match':
-									winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-									handleGuest.call(null, req, res, next);
-									break;
-								default:
-									winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
-									next();
-									break;
-							}
-		
-							return;
+
+							return plugins.fireHook('filter:sessionSharing.error', {
+							    error: err,
+							    uid: uid,
+							    res: res,
+							    settings: plugin.settings,
+							    handleAsGuest: handleAsGuest 
+							}, function(err, data) {
+							   if (data.handleAsGuest) {
+							       return handleGuest.call(null, req, res, next);
+							   } 
+
+							   next();
+							});
 						}
 		
 						winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
