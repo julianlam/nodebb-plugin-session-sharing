@@ -203,10 +203,10 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
     	uid: uid,
     	isNewUser: isNewUser,
     	token: token
-    }, function (err, data) {
+    }, function (err) {
         // Check ban state of user, reject if banned
-        user.isBanned(data.uid, function (err, banned) {
-        	callback(err || banned ? new Error('banned') : null, data.uid);
+        user.isBanned(uid, function (err, banned) {
+        	callback(err || banned ? new Error('banned') : null, uid);
         });
     });
 };
