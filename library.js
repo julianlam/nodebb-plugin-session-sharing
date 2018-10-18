@@ -204,6 +204,9 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
     	isNewUser: isNewUser,
     	token: token
     }, function (err) {
+	if (err) {
+		return callback(err);    
+	}
         // Check ban state of user, reject if banned
         user.isBanned(uid, function (err, banned) {
         	callback(err || banned ? new Error('banned') : null, uid);
