@@ -142,7 +142,7 @@ plugin.process = function(token, callback) {
 		async.apply(plugin.findOrCreateUser),
 		async.apply(plugin.updateUserProfile),
 		async.apply(plugin.updateUserGroups),
-		async.apply(plugin.verifyUser)
+		async.apply(plugin.verifyUser, token)
 	], callback);
 };
 
@@ -198,11 +198,20 @@ plugin.normalizePayload = function(payload, callback) {
 	});
 };
 
-plugin.verifyUser = function(uid, callback) {
-	// Check ban state of user, reject if banned
-	user.isBanned(uid, function(err, banned) {
-		callback(err || banned ? new Error('banned') : null, uid);
-	});
+plugin.verifyUser = function (token, uid, isNewUser, callback) {
+    plugins.fireHook('static:sessionSharing.verifyUser', {
+    	uid: uid,
+    	isNewUser: isNewUser,
+    	token: token
+    }, function (err) {
+	if (err) {
+		return callback(err);    
+	}
+        // Check ban state of user, reject if banned
+        user.isBanned(uid, function (err, banned) {
+        	callback(err || banned ? new Error('banned') : null, uid);
+        });
+    });
 };
 
 plugin.findOrCreateUser = function(userData, callback) {
@@ -310,7 +319,7 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 
 plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 	if (!userData.groups || !userData.groups.length) {
-		return setImmediate(callback, null, uid);
+		return setImmediate(callback, null, uid, isNewUser);
 	}
 
 	async.waterfall([
@@ -338,7 +347,7 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			executeJoinLeave(uid, join, leave, next);
 		}
 	], function (err) {
-		return callback(err, uid);
+		return callback(err, uid, isNewUser);
 	});
 };
 
