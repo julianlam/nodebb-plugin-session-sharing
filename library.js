@@ -2,22 +2,22 @@
 
 /* globals process, require, module */
 
-var meta = module.parent.require('./meta');
-var user = module.parent.require('./user');
-var groups = module.parent.require('./groups');
+var meta = require.main.require('./src/meta');
+var user = require.main.require('./src/user');
+var groups = require.main.require('./src/groups');
 var SocketPlugins = require.main.require('./src/socket.io/plugins');
 
 var _ = module.parent.require('underscore');
 var winston = module.parent.require('winston');
 var async = require('async');
-var db = module.parent.require('./database');
+var db = require.main.require('./src/database');
 var nconf = module.parent.require('nconf');
-var plugins = module.parent.require('./plugins');
+var plugins = require.main.require('./src/plugins');
 
 var jwt = require('jsonwebtoken');
 
 var controllers = require('./lib/controllers');
-var nbbAuthController = module.parent.require('./controllers/authentication');
+var nbbAuthController = require.main.require('./src/controllers/authentication');
 
 /* all the user profile fields that can be passed to user.updateProfile */
 var profileFields = [
