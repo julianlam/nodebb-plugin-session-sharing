@@ -73,6 +73,19 @@
 							<span class="mdl-switch__label"><strong>Automatically leave groups if not present in payload</strong></span>
 						</label>
 					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="syncGroupList" name="syncGroupList" />
+							<span class="mdl-switch__label"><strong>Select groups to join/leave</strong></span>
+						</label>
+					</div>
+					<div class="form-group">
+						<select class="form-control" id="syncGroups" name="syncGroups" multiple size="10">
+							<!-- BEGIN groups -->
+							<option value="{groups.displayName}">{groups.displayName}</option>
+							<!-- END groups -->
+						</select>
+					</div>
 					<div class="form-group">
 						<label for="logoutRedirect">Logout Redirection</label>
 						<input type="text" class="form-control" id="logoutRedirect" name="logoutRedirect" />
