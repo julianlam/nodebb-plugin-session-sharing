@@ -335,6 +335,13 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			var join = userData.groups.filter(function (name) {
 				return !groups.includes(name);
 			});
+			
+			if (plugin.settings.syncGroupList === 'on') {
+				join = join.filter((group) => {
+					return plugin.settings.syncGroups.includes(group);
+				});
+		    	}
+			
 			var leave = groups.filter(function (name) {
 				// `registered-users` is always a joined group
 				if (name === 'registered-users') {
@@ -343,6 +350,12 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 
 				return !userData.groups.includes(name);
 			});
+			
+			if (plugin.settings.syncGroupList === 'on') {
+            			leave = leave.filter((group) => {
+            				return plugin.settings.syncGroups.includes(group);
+            			});
+            		}
 
 			executeJoinLeave(uid, join, leave, next);
 		}
