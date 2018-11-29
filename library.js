@@ -47,6 +47,7 @@ var plugin = {
 		cookieDomain: undefined,
 		secret: '',
 		behaviour: 'trust',
+		adminRevalidate: 'off',
 		noRegistration: 'off',
 		payloadParent: undefined,
 	}
@@ -488,7 +489,7 @@ plugin.addMiddleware = function(req, res, next) {
 				} else if (hasSession) {
 					// Has login session but no cookie, can assume "revalidate" behaviour
 					user.isAdministrator(req.user.uid, function(err, isAdmin) {
-						if (!isAdmin) {
+						if (plugin.settings.adminRevalidate === 'on' || !isAdmin) {
 							req.logout();
 							res.locals.fullRefresh = true;
 							handleGuest(req, res, next);

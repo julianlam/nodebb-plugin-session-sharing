@@ -42,14 +42,28 @@
 						</select>
 					</div>
 					<div class="checkbox">
+							<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+								<input class="mdl-switch__input" type="checkbox" id="adminRevalidate" name="adminRevalidate" />
+								<span class="mdl-switch__label"><strong>Apply revalidation rules to administrators as well</strong></span>
+							</label>
+							<p class="help-block">
+								Administrators are exempt from the <code>revalidate</code> behaviour because a 
+								misconfiguration could lock them out of the admin panel. Enable this option to force
+								administrators to also undergo cookie revalidation, and thereby increasing security.
+							</p>
+							<p class="help-block">
+								This option is disabled by default to allow for smoother setup.
+							</p>
+						</div>
+					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 							<input class="mdl-switch__input" type="checkbox" id="noRegistration" name="noRegistration" />
 							<span class="mdl-switch__label"><strong>Do not automatically create NodeBB accounts for unrecognized users</strong></span>
 						</label>
-						<div class="help-block">
+						<p class="help-block">
 							By default, an unrecognized user id found in a payload cookie will have a local NodeBB account automatically created for it. If enabled,
 							that cookie will not resolve into a session and that client will remain a guest.
-						</div>
+						</p>
 					</div>
 					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
