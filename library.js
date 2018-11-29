@@ -565,6 +565,11 @@ plugin.addAdminNavigation = function(header, callback) {
 };
 
 plugin.reloadSettings = function(callback) {
+	// If callback is not a function then it is the action hook from core
+	if (typeof callback !== 'function' && callback.plugin !== 'session-sharing') {
+		return;
+	}
+
 	meta.settings.get('session-sharing', function(err, settings) {
 		if (err) {
 			return callback(err);
@@ -591,7 +596,9 @@ plugin.reloadSettings = function(callback) {
 		plugin.settings = _.defaults(_.pick(settings, Boolean), plugin.settings);
 		plugin.ready = true;
 
-		callback();
+		if (typeof callback === 'function') {
+			callback();
+		}
 	});
 };
 

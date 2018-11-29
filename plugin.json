@@ -8,7 +8,8 @@
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
 		{ "hook": "static:user.loggedOut", "method": "cleanup" },
 		{ "hook": "filter:config.get", "method": "appendConfig" },
-		{ "hook": "filter:middleware.render", "method": "appendTemplate" }
+		{ "hook": "filter:middleware.render", "method": "appendTemplate" },
+		{ "hook": "action:settings.set", "method": "reloadSettings" }
 	],
 	"less": [
 		"static/style.less"
