@@ -40,7 +40,7 @@ module.exports = {
 			function (hashData, next) {
 				winston.verbose('constructing array');
 				var values = [];
-				
+
 				for(var remoteId in hashData) {
 					if (hashData.hasOwnProperty(remoteId)) {
 						values.push(remoteId);
@@ -50,18 +50,18 @@ module.exports = {
 				winston.verbose('saving into db');
 				async.eachSeries(values, function (value, next) {
 					progress.incr();
-					db.sortedSetAdd((settings.name || 'appId') + ':uid', hashData[value], value, next);	
-				}, next);				
+					db.sortedSetAdd((settings.name || 'appId') + ':uid', hashData[value], value, next);
+				}, next);
 			}
 		], function (err) {
 			if (typeof err === 'boolean') {
 				// No upgrade needed
 				return callback();
-			} else if (err.message === 'WRONGTYPE Operation against a key holding the wrong kind of value') {
+			} else if (err && err.message === 'WRONGTYPE Operation against a key holding the wrong kind of value') {
 				// Likely script already run, all is well
 				err = null;
 			}
-			
+
 			callback(err);
 		});
 	},
