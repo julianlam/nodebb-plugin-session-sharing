@@ -7,11 +7,13 @@ var user = require.main.require('./src/user');
 var groups = require.main.require('./src/groups');
 var SocketPlugins = require.main.require('./src/socket.io/plugins');
 
-var _ = module.parent.require('underscore');
 var winston = module.parent.require('winston');
-var async = require('async');
-var db = require.main.require('./src/database');
 var nconf = module.parent.require('nconf');
+
+var _ = require('lodash');
+var async = require('async');
+
+var db = require.main.require('./src/database');
 var plugins = require.main.require('./src/plugins');
 
 var jwt = require('jsonwebtoken');

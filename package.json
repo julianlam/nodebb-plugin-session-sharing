@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "async": "2.1.4",
-    "jsonwebtoken": "5.5.4"
+    "jsonwebtoken": "5.5.4",
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.5.2",
