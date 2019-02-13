@@ -200,19 +200,19 @@ plugin.normalizePayload = function(payload, callback) {
 };
 
 plugin.verifyUser = function (token, uid, isNewUser, callback) {
-    plugins.fireHook('static:sessionSharing.verifyUser', {
-    	uid: uid,
-    	isNewUser: isNewUser,
-    	token: token
-    }, function (err) {
+	plugins.fireHook('static:sessionSharing.verifyUser', {
+		uid: uid,
+		isNewUser: isNewUser,
+		token: token
+	}, function (err) {
 	if (err) {
-		return callback(err);    
+		return callback(err);
 	}
-        // Check ban state of user, reject if banned
-        user.isBanned(uid, function (err, banned) {
-        	callback(err || banned ? new Error('banned') : null, uid);
-        });
-    });
+		// Check ban state of user, reject if banned
+		user.isBanned(uid, function (err, banned) {
+			callback(err || banned ? new Error('banned') : null, uid);
+		});
+	});
 };
 
 plugin.findOrCreateUser = function(userData, callback) {
@@ -266,7 +266,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 					});
 				}
 				setImmediate(next, null, uid, userData, false);
-			}			
+			}
 		], callback);
 	});
 };
@@ -336,13 +336,13 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			var join = userData.groups.filter(function (name) {
 				return !groups.includes(name);
 			});
-			
+
 			if (plugin.settings.syncGroupList === 'on') {
 				join = join.filter((group) => {
 					return plugin.settings.syncGroups.includes(group);
 				});
-		    	}
-			
+				}
+
 			var leave = groups.filter(function (name) {
 				// `registered-users` is always a joined group
 				if (name === 'registered-users') {
@@ -351,12 +351,12 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 
 				return !userData.groups.includes(name);
 			});
-			
+
 			if (plugin.settings.syncGroupList === 'on') {
-            			leave = leave.filter((group) => {
-            				return plugin.settings.syncGroups.includes(group);
-            			});
-            		}
+				leave = leave.filter((group) => {
+					return plugin.settings.syncGroups.includes(group);
+				});
+			}
 
 			executeJoinLeave(uid, join, leave, next);
 		}
@@ -444,40 +444,40 @@ plugin.addMiddleware = function(req, res, next) {
 							var handleAsGuest = false;
 
 							switch (err.message) {
-							   case 'banned':
-							       winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-							       req.session.sessionSharing = {
+								case 'banned':
+									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+									req.session.sessionSharing = {
 									banned: true,
 									uid: uid,
 								};
 								break;
-							   case 'payload-invalid':
-							       winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-							       break;
-							   case 'no-match':
-							       winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-							       handleAsGuest = true;
-							       break;
-							   default:
-							       winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
-							       break;
+								case 'payload-invalid':
+									winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+									break;
+								case 'no-match':
+									winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+									handleAsGuest = true;
+									break;
+								default:
+									winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+									break;
 							}
 
 							return plugins.fireHook('filter:sessionSharing.error', {
-							    error: err,
-							    uid: uid,
-							    res: res,
-							    settings: plugin.settings,
-							    handleAsGuest: handleAsGuest 
+								error: err,
+								uid: uid,
+								res: res,
+								settings: plugin.settings,
+								handleAsGuest: handleAsGuest
 							}, function(err, data) {
-							   if (data.handleAsGuest) {
-							       return handleGuest.call(null, req, res, next);
-							   } 
+								if (data.handleAsGuest) {
+									return handleGuest.call(null, req, res, next);
+								}
 
-							   next();
+								next();
 							});
 						}
-		
+
 						winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 						req.uid = uid;
 						req.loggedIn = true;
