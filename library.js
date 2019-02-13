@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /* globals process, require, module */
 
@@ -29,7 +29,7 @@ var profileFields = [
 	'groupTitle',
 	'birthday',
 	'signature',
-	'aboutme'
+	'aboutme',
 ];
 var payloadKeys = profileFields.concat([
 	'id', // the uniq identifier of that account
@@ -50,16 +50,18 @@ var plugin = {
 		adminRevalidate: 'off',
 		noRegistration: 'off',
 		payloadParent: undefined,
-	}
+	},
 };
 
-payloadKeys.forEach(function(key) {
+payloadKeys.forEach(function (key) {
 	plugin.settings['payload:' + key] = key;
 });
 
-plugin.init = function(params, callback) {
-	var router = params.router,
-		hostMiddleware = params.middleware;
+plugin.init = function (params, callback) {
+	var router = params.router;
+
+
+	var hostMiddleware = params.middleware;
 
 	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
@@ -73,11 +75,11 @@ plugin.init = function(params, callback) {
 	plugin.reloadSettings(callback);
 };
 
-plugin.appendConfig = function(config, callback) {
+plugin.appendConfig = function (config, callback) {
 	config.sessionSharing = {
 		logoutRedirect: plugin.settings.logoutRedirect,
 		loginOverride: plugin.settings.loginOverride,
-		registerOverride: plugin.settings.registerOverride
+		registerOverride: plugin.settings.registerOverride,
 	};
 
 	callback(null, config);
@@ -87,11 +89,10 @@ plugin.appendConfig = function(config, callback) {
 
 SocketPlugins.sessionSharing = {};
 
-SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
+SocketPlugins.sessionSharing.showUserIds = function (socket, data, callback) {
 	// Retrieve the hash and find matches
 	var uids = data.uids;
 	var payload = [];
-	var match, idx;
 
 	payload.length = uids.length;
 
@@ -99,6 +100,10 @@ SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
 		async.map(uids, function (uid, next) {
 			db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid, next);
 		}, function (err, remoteIds) {
+			if (err) {
+				return callback(err);
+			}
+
 			remoteIds.forEach(function (remoteId, idx) {
 				payload[idx] = remoteId;
 			});
@@ -110,7 +115,7 @@ SocketPlugins.sessionSharing.showUserIds = function(socket, data, callback) {
 	}
 };
 
-SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callback) {
+SocketPlugins.sessionSharing.findUserByRemoteId = function (socket, data, callback) {
 	if (data.remoteId) {
 		plugin.getUser(data.remoteId, callback);
 	} else {
@@ -123,31 +128,31 @@ SocketPlugins.sessionSharing.findUserByRemoteId = function(socket, data, callbac
 /*
  *	Given a remoteId, show user data
  */
-plugin.getUser = function(remoteId, callback) {
+plugin.getUser = function (remoteId, callback) {
 	async.waterfall([
 		async.apply(db.sortedSetScore, plugin.settings.name + ':uid', remoteId),
-		function(uid, next) {
+		function (uid, next) {
 			if (uid) {
 				user.getUserFields(uid, ['username', 'userslug', 'picture'], next);
 			} else {
 				setImmediate(next);
 			}
-		}
+		},
 	], callback);
 };
 
-plugin.process = function(token, callback) {
+plugin.process = function (token, callback) {
 	async.waterfall([
 		async.apply(jwt.verify, token, plugin.settings.secret),
 		async.apply(plugin.normalizePayload),
 		async.apply(plugin.findOrCreateUser),
 		async.apply(plugin.updateUserProfile),
 		async.apply(plugin.updateUserGroups),
-		async.apply(plugin.verifyUser, token)
+		async.apply(plugin.verifyUser, token),
 	], callback);
 };
 
-plugin.normalizePayload = function(payload, callback) {
+plugin.normalizePayload = function (payload, callback) {
 	var userData = {};
 
 	if (plugin.settings.payloadParent) {
@@ -159,7 +164,7 @@ plugin.normalizePayload = function(payload, callback) {
 		return callback(new Error('payload-invalid'));
 	}
 
-	payloadKeys.forEach(function(key) {
+	payloadKeys.forEach(function (key) {
 		var propName = plugin.settings['payload:' + key];
 		if (propName) {
 			userData[key] = payload[propName];
@@ -193,8 +198,8 @@ plugin.normalizePayload = function(payload, callback) {
 	winston.verbose('[session-sharing] Payload verified');
 	plugins.fireHook('filter:sessionSharing.normalizePayload', {
 		payload: payload,
-		userData: userData
-	}, function(err, data) {
+		userData: userData,
+	}, function (err, data) {
 		callback(err, data.userData);
 	});
 };
@@ -203,11 +208,11 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
 	plugins.fireHook('static:sessionSharing.verifyUser', {
 		uid: uid,
 		isNewUser: isNewUser,
-		token: token
+		token: token,
 	}, function (err) {
-	if (err) {
-		return callback(err);
-	}
+		if (err) {
+			return callback(err);
+		}
 		// Check ban state of user, reject if banned
 		user.isBanned(uid, function (err, banned) {
 			callback(err || banned ? new Error('banned') : null, uid);
@@ -215,23 +220,23 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
 	});
 };
 
-plugin.findOrCreateUser = function(userData, callback) {
+plugin.findOrCreateUser = function (userData, callback) {
 	var queries = {};
 	if (userData.email && userData.email.length) {
 		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
 	}
 	queries.uid = async.apply(db.sortedSetScore, plugin.settings.name + ':uid', userData.id);
 
-	async.parallel(queries, function(err, checks) {
+	async.parallel(queries, function (err, checks) {
 		if (err) { return callback(err); }
 
 		async.waterfall([
 			/* check if found something to work with */
-			function(next) {
+			function (next) {
 				if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
 					var uid = parseInt(checks.uid, 10);
 					/* check if the user with the given id actually exists */
-					return user.exists(uid, function(err, exists) {
+					return user.exists(uid, function (err, exists) {
 						/* ignore errors, but assume the user doesn't exist  */
 						if (err) {
 							winston.warn('[session-sharing] Error while testing user existance', err);
@@ -241,7 +246,7 @@ plugin.findOrCreateUser = function(userData, callback) {
 							return next(null, uid);
 						}
 						/* reference is outdated, user got deleted */
-						db.sortedSetRemove(plugin.settings.name + ':uid', userData.id, function(err) {
+						db.sortedSetRemove(plugin.settings.name + ':uid', userData.id, function (err) {
 							next(err, null);
 						});
 					});
@@ -255,23 +260,23 @@ plugin.findOrCreateUser = function(userData, callback) {
 				setImmediate(next, null, null);
 			},
 			/* create the user from payload if necessary */
-			function(uid, next) {
+			function (uid, next) {
 				winston.debug('createUser?', !uid);
-				if (! uid) {
+				if (!uid) {
 					if (plugin.settings.noRegistration === 'on') {
 						return next(new Error('no-match'));
 					}
-					return plugin.createUser(userData, function(err, uid) {
+					return plugin.createUser(userData, function (err, uid) {
 						next(err, uid, userData, true);
 					});
 				}
 				setImmediate(next, null, uid, userData, false);
-			}
+			},
 		], callback);
 	});
 };
 
-plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
+plugin.updateUserProfile = function (uid, userData, isNewUser, callback) {
 	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
 
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
@@ -312,8 +317,8 @@ plugin.updateUserProfile = function(uid, userData, isNewUser, callback) {
 			}
 
 			setImmediate(next, null);
-		}
-	], function(err) {
+		},
+	], function (err) {
 		return callback(err, uid, userData, isNewUser);
 	});
 };
@@ -338,10 +343,8 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			});
 
 			if (plugin.settings.syncGroupList === 'on') {
-				join = join.filter((group) => {
-					return plugin.settings.syncGroups.includes(group);
-				});
-				}
+				join = join.filter(group => plugin.settings.syncGroups.includes(group));
+			}
 
 			var leave = groups.filter(function (name) {
 				// `registered-users` is always a joined group
@@ -353,19 +356,17 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
 			});
 
 			if (plugin.settings.syncGroupList === 'on') {
-				leave = leave.filter((group) => {
-					return plugin.settings.syncGroups.includes(group);
-				});
+				leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
 			}
 
 			executeJoinLeave(uid, join, leave, next);
-		}
+		},
 	], function (err) {
 		return callback(err, uid, isNewUser);
 	});
 };
 
-function executeJoinLeave (uid, join, leave, callback) {
+function executeJoinLeave(uid, join, leave, callback) {
 	async.parallel([
 		function (next) {
 			if (plugin.settings.syncGroupJoin !== 'on') {
@@ -384,14 +385,14 @@ function executeJoinLeave (uid, join, leave, callback) {
 			async.each(leave, function (name, next) {
 				groups.leave(name, uid, next);
 			}, next);
-		}
+		},
 	], callback);
-};
+}
 
-plugin.createUser = function(userData, callback) {
+plugin.createUser = function (userData, callback) {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
 
-	user.create(_.pick(userData, profileFields), function(err, uid) {
+	user.create(_.pick(userData, profileFields), function (err, uid) {
 		if (err) { return callback(err); }
 
 		db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id, function (err) {
@@ -400,11 +401,11 @@ plugin.createUser = function(userData, callback) {
 	});
 };
 
-plugin.addMiddleware = function(req, res, next) {
-	function handleGuest (req, res, next) {
+plugin.addMiddleware = function (req, res, next) {
+	function handleGuest(req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
-			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl) ));
+			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
 		} else if (res.locals.fullRefresh === true) {
 			res.redirect(nconf.get('relative_path') + req.url);
 		} else {
@@ -426,93 +427,92 @@ plugin.addMiddleware = function(req, res, next) {
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
 
 		return next();
-	} else {
-		// Hook into ip blacklist functionality in core
-		meta.blacklist.test(req.ip, function (err) {
-			if (err) {
-				if (hasSession) {
+	}
+	// Hook into ip blacklist functionality in core
+	meta.blacklist.test(req.ip, function (err) {
+		if (err) {
+			if (hasSession) {
+				req.logout();
+				res.locals.fullRefresh = true;
+			}
+
+			plugin.cleanup({ res: res });
+			return handleGuest.call(null, req, res, next);
+		}
+		if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
+			return plugin.process(req.cookies[plugin.settings.cookieName], function (err, uid) {
+				if (err) {
+					var handleAsGuest = false;
+
+					switch (err.message) {
+					case 'banned':
+						winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
+						req.session.sessionSharing = {
+							banned: true,
+							uid: uid,
+						};
+						break;
+					case 'payload-invalid':
+						winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+						break;
+					case 'no-match':
+						winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+						handleAsGuest = true;
+						break;
+					default:
+						winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
+						break;
+					}
+
+					return plugins.fireHook('filter:sessionSharing.error', {
+						error: err,
+						uid: uid,
+						res: res,
+						settings: plugin.settings,
+						handleAsGuest: handleAsGuest,
+					}, function (err, data) {
+						if (data.handleAsGuest) {
+							return handleGuest.call(err, req, res, next);
+						}
+
+						next(err);
+					});
+				}
+
+				winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
+				req.uid = uid;
+				req.loggedIn = true;
+				nbbAuthController.doLogin(req, uid, function () {
+					req.session.loginLock = true;
+					const url = req.session.returnTo || req.url;
+					res.redirect(nconf.get('relative_path') + encodeURI(url));
+				});
+			});
+		} else if (hasSession) {
+			// Has login session but no cookie, can assume "revalidate" behaviour
+			user.isAdministrator(req.user.uid, function (err, isAdmin) {
+				if (plugin.settings.adminRevalidate === 'on' || !isAdmin) {
 					req.logout();
 					res.locals.fullRefresh = true;
-				}
-
-				plugin.cleanup({ res: res });
-				return handleGuest.call(null, req, res, next);
-			} else {
-				if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
-					return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
-						if (err) {
-							var handleAsGuest = false;
-
-							switch (err.message) {
-								case 'banned':
-									winston.info('[session-sharing] uid ' + uid + ' is banned, not logging them in');
-									req.session.sessionSharing = {
-									banned: true,
-									uid: uid,
-								};
-								break;
-								case 'payload-invalid':
-									winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-									break;
-								case 'no-match':
-									winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-									handleAsGuest = true;
-									break;
-								default:
-									winston.warn('[session-sharing] Error encountered while parsing token: ' + err.message);
-									break;
-							}
-
-							return plugins.fireHook('filter:sessionSharing.error', {
-								error: err,
-								uid: uid,
-								res: res,
-								settings: plugin.settings,
-								handleAsGuest: handleAsGuest
-							}, function(err, data) {
-								if (data.handleAsGuest) {
-									return handleGuest.call(null, req, res, next);
-								}
-
-								next();
-							});
-						}
-
-						winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
-						req.uid = uid;
-						req.loggedIn = true;
-						nbbAuthController.doLogin(req, uid, function () {
-							req.session.loginLock = true;
-							res.redirect(req.originalUrl);
-						});
-					});
-				} else if (hasSession) {
-					// Has login session but no cookie, can assume "revalidate" behaviour
-					user.isAdministrator(req.user.uid, function(err, isAdmin) {
-						if (plugin.settings.adminRevalidate === 'on' || !isAdmin) {
-							req.logout();
-							res.locals.fullRefresh = true;
-							handleGuest(req, res, next);
-						} else {
-							// Admins can bypass
-							return next();
-						}
-					});
+					handleGuest(req, res, next);
 				} else {
-					handleGuest.call(null, req, res, next);
+					// Admins can bypass
+					return next(err);
 				}
-			}
-		});
-	}
+			});
+		} else {
+			handleGuest.call(null, req, res, next);
+		}
+	});
 };
 
-plugin.cleanup = function(data, callback) {
+plugin.cleanup = function (data, callback) {
 	if (plugin.settings.cookieDomain) {
 		winston.verbose('[session-sharing] Clearing cookie');
 		data.res.clearCookie(plugin.settings.cookieName, {
 			domain: plugin.settings.cookieDomain,
 			expires: new Date(),
-			path: '/'
+			path: '/',
 		});
 	}
 
@@ -523,7 +523,7 @@ plugin.cleanup = function(data, callback) {
 	}
 };
 
-plugin.generate = function(req, res) {
+plugin.generate = function (req, res) {
 	var payload = {};
 	payload[plugin.settings['payload:id']] = 1;
 	payload[plugin.settings['payload:username']] = 'testUser';
@@ -538,8 +538,8 @@ plugin.generate = function(req, res) {
 	payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
 	payload[plugin.settings['payload:groups']] = ['test-group'];
 
-	if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
-		var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
+	if (plugin.settings.payloadParent || plugin.settings['payload:parent']) {
+		var parentKey = plugin.settings.payloadParent || plugin.settings['payload:parent'];
 		var newPayload = {};
 		newPayload[parentKey] = payload;
 		payload = newPayload;
@@ -547,31 +547,31 @@ plugin.generate = function(req, res) {
 
 	var token = jwt.sign(payload, plugin.settings.secret);
 	res.cookie(plugin.settings.cookieName, token, {
-		maxAge: 1000*60*60*24*21,
+		maxAge: 1000 * 60 * 60 * 24 * 21,
 		httpOnly: true,
-		domain: plugin.settings.cookieDomain
+		domain: plugin.settings.cookieDomain,
 	});
 
 	res.sendStatus(200);
 };
 
-plugin.addAdminNavigation = function(header, callback) {
+plugin.addAdminNavigation = function (header, callback) {
 	header.plugins.push({
 		route: '/plugins/session-sharing',
 		icon: 'fa-user-secret',
-		name: 'Session Sharing'
+		name: 'Session Sharing',
 	});
 
 	callback(null, header);
 };
 
-plugin.reloadSettings = function(callback) {
+plugin.reloadSettings = function (callback) {
 	// If callback is not a function then it is the action hook from core
 	if (typeof callback !== 'function' && callback.plugin !== 'session-sharing') {
 		return;
 	}
 
-	meta.settings.get('session-sharing', function(err, settings) {
+	meta.settings.get('session-sharing', function (err, settings) {
 		if (err) {
 			return callback(err);
 		}
@@ -582,7 +582,7 @@ plugin.reloadSettings = function(callback) {
 		}
 
 		// If "payload:parent" is found, but payloadParent is not, update the latter and delete the former
-		if (!settings['payloadParent'] && settings['payload:parent']) {
+		if (!settings.payloadParent && settings['payload:parent']) {
 			winston.verbose('[session-sharing] Migrating payload:parent to payloadParent');
 			settings.payloadParent = settings['payload:parent'];
 			db.setObjectField('settings:session-sharing', 'payloadParent', settings.payloadParent);
@@ -606,6 +606,10 @@ plugin.reloadSettings = function(callback) {
 plugin.appendTemplate = (data, callback) => {
 	if (data.req.session.sessionSharing && data.req.session.sessionSharing.banned) {
 		user.getLatestBanInfo(data.req.session.sessionSharing.uid, (err, info) => {
+			if (err) {
+				return callback(err);
+			}
+
 			data.templateData.sessionSharingBan = {
 				ban: info,
 				banned: true,
