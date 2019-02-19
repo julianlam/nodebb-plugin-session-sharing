@@ -394,7 +394,7 @@ function executeJoinLeave(uid, join, leave, callback) {
 plugin.createUser = function (userData, callback) {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
 
-	user.create(_.pick(userData, profileFields), function (err, uid) {
+	user.create(_.pickBy(userData, profileFields), function (err, uid) {
 		if (err) { return callback(err); }
 
 		db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id, function (err) {
@@ -596,7 +596,7 @@ plugin.reloadSettings = function (callback) {
 		}
 
 		winston.info('[session-sharing] Settings OK');
-		plugin.settings = _.defaults(_.pick(settings, Boolean), plugin.settings);
+		plugin.settings = _.defaults(_.pickBy(settings, Boolean), plugin.settings);
 		plugin.ready = true;
 
 		if (typeof callback === 'function') {
