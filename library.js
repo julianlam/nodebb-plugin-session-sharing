@@ -394,7 +394,7 @@ function executeJoinLeave(uid, join, leave, callback) {
 plugin.createUser = function (userData, callback) {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
 
-	user.create(_.pickBy(userData, profileFields), function (err, uid) {
+	user.create(_.pick(userData, profileFields), function (err, uid) {
 		if (err) { return callback(err); }
 
 		db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id, function (err) {
@@ -487,6 +487,7 @@ plugin.addMiddleware = function (req, res, next) {
 				nbbAuthController.doLogin(req, uid, function () {
 					req.session.loginLock = true;
 					const url = req.session.returnTo || req.url;
+					console.log('url is', url);
 					res.redirect(nconf.get('relative_path') + encodeURI(url));
 				});
 			});
