@@ -1,20 +1,20 @@
 'use strict';
-/* globals $, app, socket */
 
-define('admin/plugins/session-sharing', ['settings'], function(Settings) {
+/* globals define, $, app, socket, config */
 
+define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 	var ACP = {};
 
-	ACP.init = function() {
+	ACP.init = function () {
 		Settings.load('session-sharing', $('.session-sharing-settings'));
 
-		$('#save').on('click', function() {
-			Settings.save('session-sharing', $('.session-sharing-settings'), function() {
+		$('#save').on('click', function () {
+			Settings.save('session-sharing', $('.session-sharing-settings'), function () {
 				app.alert({
 					type: 'success',
 					alert_id: 'session-sharing-saved',
 					title: 'Settings Saved',
-					message: 'No restart/reload is required'
+					message: 'No restart/reload is required',
 				});
 			});
 		});
@@ -23,7 +23,7 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 		$('#remote_search').on('keyup', ACP.findUserByRemoteId);
 	};
 
-	ACP.showUserId = function(e) {
+	ACP.showUserId = function () {
 		if (ACP._searchDelay) {
 			clearTimeout(ACP._searchDelay);
 			delete ACP._searchDelay;
@@ -31,20 +31,24 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 
 		var element = $(this);
 
-		ACP._searchDelay = setTimeout(function() {
+		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
 
 			socket.emit('admin.user.search', {
-				query: element.val()
-			}, function(err, results) {
+				query: element.val(),
+			}, function (err, results) {
 				var resultEl = $('#result');
+
+				if (err) {
+					return resultEl.text('We encountered an error while servicing this request:' + err.message);
+				}
 
 				if (results.users.length) {
 					socket.emit('plugins.sessionSharing.showUserIds', {
 						uids: results.users.map(function (user) {
 							return user.uid;
-						})
-					}, function(err, remoteIds) {
+						}),
+					}, function (err, remoteIds) {
 						if (err) {
 							resultEl.text('We encountered an error while servicing this request:' + err.message);
 						} else {
@@ -61,7 +65,7 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 		}, 500);
 	};
 
-	ACP.findUserByRemoteId = function(e) {
+	ACP.findUserByRemoteId = function () {
 		if (ACP._searchDelay) {
 			clearTimeout(ACP._searchDelay);
 			delete ACP._searchDelay;
@@ -69,12 +73,12 @@ define('admin/plugins/session-sharing', ['settings'], function(Settings) {
 
 		var element = $(this);
 
-		ACP._searchDelay = setTimeout(function() {
+		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
 
 			socket.emit('plugins.sessionSharing.findUserByRemoteId', {
-				remoteId: element.val()
-			}, function(err, results) {
+				remoteId: element.val(),
+			}, function (err, results) {
 				if (!err && results) {
 					$('#local_result').html(
 						'<div class="media"><div class="media-left"><a target="_blank" href="' + config.relative_path + '/user/' + results.userslug + '">' +
