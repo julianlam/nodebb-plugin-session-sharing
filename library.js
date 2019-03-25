@@ -168,7 +168,7 @@ plugin.normalizePayload = function (payload, callback) {
 
 	payloadKeys.forEach(function (key) {
 		var propName = plugin.settings['payload:' + key];
-		if (propName) {
+		if (payload[propName]) {
 			userData[key] = payload[propName];
 		}
 	});
@@ -326,7 +326,7 @@ plugin.updateUserProfile = function (uid, userData, isNewUser, callback) {
 };
 
 plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
-	if (!userData.groups || !userData.groups.length) {
+	if (!userData.groups || !Array.isArray(userData.groups)) {
 		return setImmediate(callback, null, uid, isNewUser);
 	}
 
