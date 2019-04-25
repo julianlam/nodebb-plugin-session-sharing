@@ -229,6 +229,9 @@ plugin.findOrCreateUser = function (userData, callback) {
 	}
 	queries.uid = async.apply(db.sortedSetScore, plugin.settings.name + ':uid', userData.id);
 
+    if (plugin.settings.useUserObject === 'on')
+    queries.id = async.apply(db.getObjectField, 'user:' + userData.id, 'uid');
+
 	async.parallel(queries, function (err, checks) {
 		if (err) { return callback(err); }
 
@@ -241,7 +244,7 @@ plugin.findOrCreateUser = function (userData, callback) {
 					return user.exists(uid, function (err, exists) {
 						/* ignore errors, but assume the user doesn't exist  */
 						if (err) {
-							winston.warn('[session-sharing] Error while testing user existance', err);
+                            winston.warn('[session-sharing] Error checking user existance in `' + plugin.settings.name + ':uid` object:', err);
 							return next(null, null);
 						}
 						if (exists) {
@@ -251,6 +254,22 @@ plugin.findOrCreateUser = function (userData, callback) {
 						db.sortedSetRemove(plugin.settings.name + ':uid', userData.id, function (err) {
 							next(err, null);
 						});
+					});
+				}
+				if (checks.id && !isNaN(parseInt(checks.id, 10))) {
+					var uid = parseInt(checks.id, 10);
+					/* check if the user with the given id actually exists */
+					return user.exists(uid, function (err, exists) {
+						/* ignore errors, but assume the user doesn't exist  */
+						if (err) {
+							winston.warn('[session-sharing] Error checking user existance in `User` object:', err);
+							return next(null, null);
+						}
+						if (exists) {
+							return next(null, uid);
+						}
+
+						return next(null, null);
 					});
 				}
 				if (checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
