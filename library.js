@@ -486,7 +486,7 @@ plugin.addMiddleware = function (req, res, next) {
 				req.loggedIn = true;
 				nbbAuthController.doLogin(req, uid, function () {
 					req.session.loginLock = true;
-					const url = req.session.returnTo || req.url;
+					const url = req.session.returnTo || req.originalUrl.replace(nconf.get('relative_path'), '');
 					res.redirect(nconf.get('relative_path') + encodeURI(url));
 					delete req.session.returnTo;
 				});
