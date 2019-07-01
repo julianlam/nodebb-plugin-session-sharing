@@ -69,6 +69,25 @@ plugin.init = function (params, callback) {
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
+	router.post('/api/session-sharing/user', (req, res) => {
+		async.waterfall([
+			async.apply(plugin.normalizePayload, req.body),
+			async.apply(plugin.findOrCreateUser),
+			async.apply(plugin.updateUserProfile),
+			async.apply(plugin.updateUserGroups),
+			async.apply(plugin.verifyUser, req.cookies[plugin.settings.cookieName]),
+		], (err, uid) => {
+			if (err) {
+				res.status(500).json({
+					error: err.message,
+				});
+			}
+
+			res.json({
+				uid,
+			});
+		});
+	});
 
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
