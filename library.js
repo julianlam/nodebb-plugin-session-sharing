@@ -70,13 +70,13 @@ plugin.init = function (params, callback) {
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 	router.post('/api/session-sharing/user', (req, res) => {
-		async.waterfall([
-			async.apply(plugin.normalizePayload, req.body),
-			async.apply(plugin.findOrCreateUser),
-			async.apply(plugin.updateUserProfile),
-			async.apply(plugin.updateUserGroups),
-			async.apply(plugin.verifyUser, req.cookies[plugin.settings.cookieName]),
-		], (err, uid) => {
+		if (!req.body || !req.body.token) {
+			return res.status(500).json({
+				error: 'No token provided',
+			});
+		}
+		
+		plugin.process(req.body.token, (err, uid) => {
 			if (err) {
 				res.status(500).json({
 					error: err.message,
