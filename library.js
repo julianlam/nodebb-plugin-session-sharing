@@ -69,25 +69,7 @@ plugin.init = function (params, callback) {
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
-	router.post('/api/session-sharing/user', (req, res) => {
-		if (!req.body || !req.body.token) {
-			return res.status(500).json({
-				error: 'No token provided',
-			});
-		}
-		
-		plugin.process(req.body.token, (err, uid) => {
-			if (err) {
-				res.status(500).json({
-					error: err.message,
-				});
-			}
-
-			res.json({
-				uid,
-			});
-		});
-	});
+	router.post('/api/session-sharing/user', controllers.createUser);
 
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
