@@ -67,6 +67,7 @@ plugin.init = function (params, callback) {
 	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
+	router.post('/api/session-sharing/user', controllers.createUser);
 
 	if (process.env.NODE_ENV === 'development') {
 		router.get('/debug/session', plugin.generate);
