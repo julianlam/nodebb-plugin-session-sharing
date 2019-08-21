@@ -215,7 +215,7 @@ plugin.verifyUser = function (token, uid, isNewUser, callback) {
 			return callback(err);
 		}
 		// Check ban state of user, reject if banned
-		user.isBanned(uid, function (err, banned) {
+		user.bans.isBanned(uid, function (err, banned) {
 			callback(err || banned ? new Error('banned') : null, uid);
 		});
 	});
@@ -625,6 +625,11 @@ plugin.appendTemplate = (data, callback) => {
 	}
 
 	setImmediate(callback, null, data);
+};
+
+plugin.handleLogout = async (payload) => {
+	const { res } = payload;
+	res.clearCookie(plugin.settings.cookieName);
 };
 
 module.exports = plugin;
