@@ -325,7 +325,8 @@ plugin.addMiddleware = function(req, res, next) {
 	if (
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
-		(plugin.settings.behaviour === 'revalidate' && hasLoginLock)
+		(plugin.settings.behaviour === 'revalidate' && hasLoginLock || 
+		req.originalUrl.startsWith(nconf.get('relative_path') + '/api'))
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
