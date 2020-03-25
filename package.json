@@ -38,15 +38,15 @@
   "dependencies": {
     "async": "^2",
     "jsonwebtoken": "5.5.4",
+    "lint-staged": "^10.0.9",
     "lodash": "^4.17.14"
   },
   "devDependencies": {
-    "@commitlint/cli": "^8.0.0",
+    "@commitlint/cli": "^8.3.5",
     "@commitlint/config-angular": "^7.1.2",
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "husky": "^2.4.0",
-    "lint-staged": "^8.2.0"
+    "husky": "^2.4.0"
   }
 }
