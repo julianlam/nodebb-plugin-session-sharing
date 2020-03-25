@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-session-sharing",
-  "version": "4.6.5",
+  "version": "4.6.6",
   "description": "Allows login sessions from your app to persist in NodeBB",
   "main": "library.js",
   "repository": {
