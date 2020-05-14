@@ -1,7 +1,5 @@
 'use strict';
 
-/* globals process, require, module */
-
 var meta = require.main.require('./src/meta');
 var user = require.main.require('./src/user');
 var groups = require.main.require('./src/groups');
@@ -624,11 +622,6 @@ plugin.appendTemplate = (data, callback) => {
 	}
 
 	setImmediate(callback, null, data);
-};
-
-plugin.handleLogout = async (payload) => {
-	const { res } = payload;
-	res.clearCookie(plugin.settings.cookieName);
 };
 
 module.exports = plugin;
