@@ -484,7 +484,7 @@ plugin.addMiddleware = function (req, res, next) {
 					req.session.loginLock = true;
 					const url = req.session.returnTo || req.originalUrl.replace(nconf.get('relative_path'), '');
 					delete req.session.returnTo;
-					res.redirect(nconf.get('relative_path') + encodeURI(url));
+					res.redirect(nconf.get('relative_path') + url);
 				});
 			});
 		} else if (hasSession) {
