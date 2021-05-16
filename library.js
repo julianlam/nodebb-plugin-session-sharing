@@ -79,6 +79,7 @@ plugin.appendConfig = function (config, callback) {
 		logoutRedirect: plugin.settings.logoutRedirect,
 		loginOverride: plugin.settings.loginOverride,
 		registerOverride: plugin.settings.registerOverride,
+		hostWhitelist: plugin.settings.hostWhitelist,
 	};
 
 	callback(null, config);
@@ -401,6 +402,21 @@ plugin.createUser = function (userData, callback) {
 };
 
 plugin.addMiddleware = function (req, res, next) {
+	if (plugin.settings.hostWhitelist) {
+		var hosts = plugin.settings.hostWhitelist.split(',') || [plugin.settings.hostWhitelist];
+		var whitelisted = false;
+		for (var host of hosts) {
+			if (req.headers.host.includes(host)) {
+				whitelisted = true;
+				break;
+			}
+		}
+
+		if (!whitelisted) {
+			return next();
+		}
+	}
+
 	function handleGuest(req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it

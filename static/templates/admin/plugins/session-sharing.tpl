@@ -29,6 +29,13 @@
 							otherwise the JWT cannot be properly decoded.
 						</p>
 					</div>
+					<div class="form-group">
+						<label for="hostWhitelist">Host Whitelist</label>
+						<input type="text" id="hostWhitelist" name="hostWhitelist" title="Host Whitelist" class="form-control" placeholder="localhost" />
+						<p class="help-block">
+							If set, session-sharing plugin works only on whitelisted domains. Separate with commas, for example: "localhost,test.domain.com".
+						</p>
+					</div>
 				</div>
 			</div>
 			<div class="row">
