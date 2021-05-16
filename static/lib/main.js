@@ -3,6 +3,21 @@
 /* globals document, $, window, config, ajaxify, bootbox */
 
 $(document).ready(function () {
+	if (config.sessionSharing && config.sessionSharing.hostWhitelist) {
+		var hosts = config.sessionSharing.hostWhitelist.split(',') || [config.sessionSharing.hostWhitelist];
+		var whitelisted = false;
+		for (var host of hosts) {
+			if (window && window.location && window.location.host && window.location.host.includes(host)) {
+				whitelisted = true;
+				break;
+			}
+		}
+
+		if (!whitelisted) {
+			return;
+		}
+	}
+
 	$(window).on('action:app.loggedOut', function (evt, data) {
 		if (config.sessionSharing.logoutRedirect) {
 			data.next = config.sessionSharing.logoutRedirect;
