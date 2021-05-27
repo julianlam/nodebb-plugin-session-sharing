@@ -79,6 +79,7 @@ plugin.appendConfig = function (config, callback) {
 		logoutRedirect: plugin.settings.logoutRedirect,
 		loginOverride: plugin.settings.loginOverride,
 		registerOverride: plugin.settings.registerOverride,
+		editOverride: plugin.settings.editOverride,
 		hostWhitelist: plugin.settings.hostWhitelist,
 	};
 
@@ -401,9 +402,11 @@ plugin.createUser = function (userData, callback) {
 	});
 };
 
-plugin.addMiddleware = function (req, res, next) {
-	if (plugin.settings.hostWhitelist) {
-		var hosts = plugin.settings.hostWhitelist.split(',') || [plugin.settings.hostWhitelist];
+plugin.addMiddleware = async function (req, res, next) {
+	const { hostWhitelist, guestRedirect, editOverride } = await meta.settings.get('session-sharing');
+
+	if (hostWhitelist) {
+		var hosts = hostWhitelist.split(',') || [hostWhitelist];
 		var whitelisted = false;
 		for (var host of hosts) {
 			if (req.headers.host.includes(host)) {
@@ -418,9 +421,9 @@ plugin.addMiddleware = function (req, res, next) {
 	}
 
 	function handleGuest(req, res, next) {
-		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
+		if (guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
-			res.redirect(plugin.settings.guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
+			res.redirect(guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
 		} else if (res.locals.fullRefresh === true) {
 			res.redirect(nconf.get('relative_path') + req.url);
 		} else {
@@ -443,6 +446,14 @@ plugin.addMiddleware = function (req, res, next) {
 
 		return next();
 	}
+
+	if (editOverride && hasSession) {
+		const editUrlMatch = new RegExp(`${nconf.get('relative_path')}/user/.*/edit`);
+		if (req.originalUrl.match(editUrlMatch)) {
+			return res.redirect(editOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
+		}
+	}
+
 	// Hook into ip blacklist functionality in core
 	meta.blacklist.test(req.ip, function (err) {
 		if (err) {
