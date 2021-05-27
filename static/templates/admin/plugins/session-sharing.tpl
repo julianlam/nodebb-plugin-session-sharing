@@ -129,6 +129,13 @@
 							If set, users clicking the "Register" button will be redirected to this link instead
 						</p>
 					</div>
+					<div class="form-group">
+						<label for="editOverride">Edit Profile Override</label>
+						<input type="text" class="form-control" id="editOverride" name="editOverride" />
+						<p class="help-block">
+							If set, users clicking the "Edit Profile" button will be redirected to this link instead
+						</p>
+					</div>
 				</div>
 			</div>
 			<div class="row">
