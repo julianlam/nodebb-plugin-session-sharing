@@ -97,9 +97,20 @@ $(document).ready(function () {
 	function redirect(url, e) {
 		e.preventDefault();
 		e.stopPropagation();
+
 		const lastUrl = window.localStorage.getItem('sessionSharingLastUrl');
-		const editRedirectUrl = url.replace('%1', encodeURIComponent(lastUrl));
-		console.log('[session-sharing] redirecting to: ' + editRedirectUrl);
-		window.location.href = editRedirectUrl;
+		try {
+			if (!lastUrl) {
+				throw new Error('lastUrl is missing in localStorage');
+			}
+			url = url.replace('%1', encodeURIComponent(lastUrl));
+		} catch (e) {
+			const origin = window.location.origin;
+			console.log('[session-sharing] cannot replace %1 with ' + lastUrl + ' using origin ' + origin + ' instead', e);
+			url = url.replace('%1', encodeURIComponent(origin));
+		}
+
+		console.log('[session-sharing] redirecting to: ' + url);
+		window.location.href = url;
 	}
 });
