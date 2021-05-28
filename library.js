@@ -403,7 +403,7 @@ plugin.createUser = function (userData, callback) {
 };
 
 plugin.addMiddleware = async function (req, res, next) {
-	const { hostWhitelist, guestRedirect, editOverride } = await meta.settings.get('session-sharing');
+	const { hostWhitelist, guestRedirect, editOverride, loginOverride, registerOverride } = await meta.settings.get('session-sharing');
 
 	if (hostWhitelist) {
 		var hosts = hostWhitelist.split(',') || [hostWhitelist];
@@ -447,11 +447,14 @@ plugin.addMiddleware = async function (req, res, next) {
 		return next();
 	}
 
-	if (editOverride && hasSession) {
-		const editUrlMatch = new RegExp(`${nconf.get('relative_path')}/user/.*/edit`);
-		if (req.originalUrl.match(editUrlMatch)) {
-			return res.redirect(editOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
-		}
+	if (editOverride && hasSession && req.originalUrl.match(/\/user\/.*\/edit$/)) {
+		return res.redirect(editOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
+	}
+	if (loginOverride && req.originalUrl.match(/\/login$/)) {
+		return res.redirect(loginOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
+	}
+	if (registerOverride && req.originalUrl.match(/\/register$/)) {
+		return res.redirect(registerOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
 	}
 
 	// Hook into ip blacklist functionality in core
