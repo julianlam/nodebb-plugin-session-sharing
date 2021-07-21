@@ -438,7 +438,7 @@ plugin.addMiddleware = async function (req, res, next) {
 	if (
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
-		(plugin.settings.behaviour === 'revalidate' && hasLoginLock) ||
+		((plugin.settings.behaviour === 'revalidate' || plugin.settings.behaviour === 'update') && hasLoginLock) ||
 		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
 	) {
 		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
@@ -525,7 +525,7 @@ plugin.addMiddleware = async function (req, res, next) {
 		} else if (hasSession) {
 			// Has login session but no cookie, can assume "revalidate" behaviour
 			user.isAdministrator(req.user.uid, function (err, isAdmin) {
-				if (plugin.settings.adminRevalidate === 'on' || !isAdmin) {
+				if (plugin.settings.behaviour !== 'update' && (plugin.settings.adminRevalidate === 'on' || !isAdmin)) {
 					req.logout();
 					res.locals.fullRefresh = true;
 					handleGuest(req, res, next);

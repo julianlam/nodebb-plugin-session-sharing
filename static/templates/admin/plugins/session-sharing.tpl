@@ -46,6 +46,7 @@
 						<select class="form-control" name="behaviour" id="behaviour">
 							<option value="trust">"Trust" &rarr; Shared cookie token used once only to authenticate, session persists even if cookie cleared</option>
 							<option value="revalidate">"Revalidate" &rarr; Shared cookie is checked on every page load, and updated/logged out to reflect changes in cookie</option>
+							<option value="update">"Update" &rarr; Shared cookie is checked on every page load, and updated to reflect changes in cookie. But user is not logged out when cookie is missing</option>
 						</select>
 					</div>
 					<div class="checkbox">
