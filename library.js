@@ -441,8 +441,8 @@ plugin.addMiddleware = async function (req, res, next) {
 		((plugin.settings.behaviour === 'revalidate' || plugin.settings.behaviour === 'update') && hasLoginLock) ||
 		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
 	) {
-		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
-		delete req.session.loginLock;	// remove login lock for "revalidate" logins
+		// Let requests through under "update" or "revalidate" behaviour only if they're logging in for the first time
+		delete req.session.loginLock;	// remove login lock for "update" or "revalidate" logins
 
 		return next();
 	}
