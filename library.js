@@ -57,7 +57,7 @@ payloadKeys.forEach(function (key) {
 	plugin.settings['payload:' + key] = key;
 });
 
-plugin.init = function (params, callback) {
+plugin.init = async (params) => {
 	var router = params.router;
 	var hostMiddleware = params.middleware;
 
@@ -71,7 +71,7 @@ plugin.init = function (params, callback) {
 		router.get('/debug/session', plugin.generate);
 	}
 
-	plugin.reloadSettings(callback);
+	await plugin.reloadSettings();
 };
 
 plugin.appendConfig = function (config, callback) {
@@ -599,42 +599,33 @@ plugin.addAdminNavigation = function (header, callback) {
 	callback(null, header);
 };
 
-plugin.reloadSettings = function (callback) {
-	// If callback is not a function then it is the action hook from core
-	if (typeof callback !== 'function' && callback.plugin !== 'session-sharing') {
+plugin.reloadSettings = async (data) => {
+	// If data argument is truthy, then it is the action hook from core
+	if (data && data.plugin !== 'session-sharing') {
 		return;
 	}
 
-	meta.settings.get('session-sharing', function (err, settings) {
-		if (err) {
-			return callback(err);
-		}
+	const settings = await meta.settings.get('session-sharing');
+	if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
+		winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
+		return;
+	}
 
-		if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
-			winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
-			return callback();
-		}
+	// If "payload:parent" is found, but payloadParent is not, update the latter and delete the former
+	if (!settings.payloadParent && settings['payload:parent']) {
+		winston.verbose('[session-sharing] Migrating payload:parent to payloadParent');
+		settings.payloadParent = settings['payload:parent'];
+		await db.setObjectField('settings:session-sharing', 'payloadParent', settings.payloadParent);
+		await db.deleteObjectField('settings:session-sharing', 'payload:parent');
+	}
 
-		// If "payload:parent" is found, but payloadParent is not, update the latter and delete the former
-		if (!settings.payloadParent && settings['payload:parent']) {
-			winston.verbose('[session-sharing] Migrating payload:parent to payloadParent');
-			settings.payloadParent = settings['payload:parent'];
-			db.setObjectField('settings:session-sharing', 'payloadParent', settings.payloadParent);
-			db.deleteObjectField('settings:session-sharing', 'payload:parent');
-		}
+	if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName'] && !settings['payload:fullname']) {
+		settings['payload:username'] = 'username';
+	}
 
-		if (!settings['payload:username'] && !settings['payload:firstName'] && !settings['payload:lastName'] && !settings['payload:fullname']) {
-			settings['payload:username'] = 'username';
-		}
-
-		winston.info('[session-sharing] Settings OK');
-		plugin.settings = _.defaults(_.pickBy(settings, Boolean), plugin.settings);
-		plugin.ready = true;
-
-		if (typeof callback === 'function') {
-			callback();
-		}
-	});
+	winston.info('[session-sharing] Settings OK');
+	plugin.settings = _.defaults(_.pickBy(settings, Boolean), plugin.settings);
+	plugin.ready = true;
 };
 
 plugin.appendTemplate = (data, callback) => {
