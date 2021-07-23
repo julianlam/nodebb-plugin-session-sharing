@@ -197,7 +197,7 @@ plugin.normalizePayload = function (payload, callback) {
 	}
 
 	winston.verbose('[session-sharing] Payload verified');
-	plugins.fireHook('filter:sessionSharing.normalizePayload', {
+	plugins.hooks.fire('filter:sessionSharing.normalizePayload', {
 		payload: payload,
 		userData: userData,
 	}, function (err, data) {
@@ -206,7 +206,7 @@ plugin.normalizePayload = function (payload, callback) {
 };
 
 plugin.verifyUser = function (token, uid, isNewUser, callback) {
-	plugins.fireHook('static:sessionSharing.verifyUser', {
+	plugins.hooks.fire('static:sessionSharing.verifyUser', {
 		uid: uid,
 		isNewUser: isNewUser,
 		token: token,
@@ -493,7 +493,7 @@ plugin.addMiddleware = async function (req, res, next) {
 						break;
 					}
 
-					return plugins.fireHook('filter:sessionSharing.error', {
+					return plugins.hooks.fire('filter:sessionSharing.error', {
 						error: err,
 						uid: uid,
 						res: res,
