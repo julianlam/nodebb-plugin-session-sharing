@@ -34,35 +34,37 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 
 		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
-
-			socket.emit('admin.user.search', {
+			
+			var qs = decodeURIComponent($.param({
 				query: element.val(),
-			}, function (err, results) {
-				var resultEl = $('#result');
+			}));
+			
+			$.get(config.relative_path + '/api/admin/manage/users?' + qs)
+				.then(function (results) {
+					var resultEl = $('#result');
 
-				if (err) {
-					return resultEl.text('We encountered an error while servicing this request:' + err.message);
-				}
-
-				if (results.users.length) {
-					socket.emit('plugins.sessionSharing.showUserIds', {
-						uids: results.users.map(function (user) {
-							return user.uid;
-						}),
-					}, function (err, remoteIds) {
-						if (err) {
-							resultEl.text('We encountered an error while servicing this request:' + err.message);
-						} else {
-							resultEl.empty();
-							results.users.forEach(function (userObj, idx) {
-								resultEl.append('<p>Username: ' + userObj.username + '<br />NodeBB uid: ' + userObj.uid + '<br />Remote id: ' + (remoteIds[idx] || '<em>Not Found</em>'));
-							});
-						}
-					});
-				} else {
-					resultEl.text('No users matched your query');
-				}
-			});
+					if (results.users.length) {
+						socket.emit('plugins.sessionSharing.showUserIds', {
+							uids: results.users.map(function (user) {
+								return user.uid;
+							}),
+						}, function (err, remoteIds) {
+							if (err) {
+								resultEl.text('We encountered an error while servicing this request:' + err.message);
+							} else {
+								resultEl.empty();
+								results.users.forEach(function (userObj, idx) {
+									resultEl.append('<p>Username: ' + userObj.username + '<br />NodeBB uid: ' + userObj.uid + '<br />Remote id: ' + (remoteIds[idx] || '<em>Not Found</em>'));
+								});
+							}
+						});
+					} else {
+						resultEl.text('No users matched your query');
+					}
+				})
+				.fail(function (err) {
+					$('#result').text('We encountered an error while servicing this request:' + err.message);
+				});
 		}, 500);
 	};
 
