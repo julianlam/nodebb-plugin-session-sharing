@@ -48,6 +48,7 @@ const plugin = {
 		adminRevalidate: 'off',
 		noRegistration: 'off',
 		payloadParent: undefined,
+		allowBannedUsers: false,
 	},
 };
 
@@ -201,6 +202,14 @@ plugin.verifyUser = async (token, uid, isNewUser) => {
 		isNewUser: isNewUser,
 		token: token,
 	});
+	
+	// Check ban state of user
+	const isBanned = await user.bans.isBanned(uid);
+
+	// Reject if banned and settings dont allow banned users to login
+	if (isBanned && !plugin.settings.allowBannedUsers) {
+		throw new Error('banned');
+	}
 };
 
 plugin.findOrCreateUser = async (userData) {
