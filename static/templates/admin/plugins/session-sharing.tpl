@@ -85,6 +85,15 @@
 					</div>
 					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="allowBannedUsers" name="allowBannedUsers" />
+							<span class="mdl-switch__label"><strong>Allow banned users to be logged in and placed into banned user group</strong></span>
+						</label>
+						<p class="help-block">
+							By default banned users arent logged in and an error is thrown. If enabled, banned users are logged in and placed in the banned group.
+						</p>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 							<input class="mdl-switch__input" type="checkbox" id="syncGroupJoin" name="syncGroupJoin" />
 							<span class="mdl-switch__label"><strong>Automatically join groups if present in payload</strong></span>
 						</label>
