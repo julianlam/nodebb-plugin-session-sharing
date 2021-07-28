@@ -48,6 +48,7 @@ const plugin = {
 		adminRevalidate: 'off',
 		noRegistration: 'off',
 		payloadParent: undefined,
+		allowBannedUsers: false,
 	},
 };
 
@@ -72,7 +73,7 @@ plugin.init = async (params) => {
 	await plugin.reloadSettings();
 };
 
-plugin.appendConfig = async (config) {
+plugin.appendConfig = async (config) => {
 	config.sessionSharing = {
 		logoutRedirect: plugin.settings.logoutRedirect,
 		loginOverride: plugin.settings.loginOverride,
@@ -99,7 +100,7 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
-SocketPlugins.sessionSharing.showUserIds = async (socket, data) {
+SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 	// Retrieve the hash and find matches
 	const { uids } = data;
 	
@@ -110,7 +111,7 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) {
 	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
-SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) {
+SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
 	if (!data.remoteId) {
 		throw new Error('no-remote-id-supplied');
 	}
@@ -143,7 +144,7 @@ plugin.process = async (token) => {
 	return uid;
 };
 
-plugin.normalizePayload = async (payload) {
+plugin.normalizePayload = async (payload) => {
 	const userData = {};
 
 	if (plugin.settings.payloadParent) {
@@ -201,9 +202,17 @@ plugin.verifyUser = async (token, uid, isNewUser) => {
 		isNewUser: isNewUser,
 		token: token,
 	});
+	
+	// Check ban state of user
+	const isBanned = await user.bans.isBanned(uid);
+
+	// Reject if banned and settings dont allow banned users to login
+	if (isBanned && !plugin.settings.allowBannedUsers) {
+		throw new Error('banned');
+	}
 };
 
-plugin.findOrCreateUser = async (userData) {
+plugin.findOrCreateUser = async (userData) => {
 	const { id } = userData;
 	let isNewUser = false;
 	let userId = null;
@@ -255,7 +264,7 @@ plugin.findOrCreateUser = async (userData) {
 	return [userId, isNewUser];
 };
 
-plugin.updateUserProfile = async (uid, userData, isNewUser) {
+plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
 	let userObj = {};
 
@@ -293,7 +302,7 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) {
 	}
 };
 
-plugin.updateUserGroups = async (uid, userData, isNewUser) {
+plugin.updateUserGroups = async (uid, userData, isNewUser) => {
 	if (!userData.groups || !Array.isArray(userData.groups)) {
 		return;
 	}
@@ -343,7 +352,7 @@ async function executeJoinLeave(uid, join, leave) {
 	]);
 }
 
-plugin.createUser = async (userData) {
+plugin.createUser = async (userData) => {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
 	
 	const uid = await user.create(_.pick(userData, profileFields));
@@ -485,7 +494,7 @@ plugin.addMiddleware = async function (req, res, next) {
 	}
 };
 
-plugin.cleanup = async (data) {
+plugin.cleanup = async (data) => {
 	if (plugin.settings.cookieDomain) {
 		winston.verbose('[session-sharing] Clearing cookie');
 		data.res.clearCookie(plugin.settings.cookieName, {
@@ -530,7 +539,7 @@ plugin.generate = function (req, res) {
 	res.sendStatus(200);
 };
 
-plugin.addAdminNavigation = async (header) {
+plugin.addAdminNavigation = async (header) => {
 	header.plugins.push({
 		route: '/plugins/session-sharing',
 		icon: 'fa-user-secret',
