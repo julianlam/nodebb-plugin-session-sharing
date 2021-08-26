@@ -97,25 +97,25 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 		throw new Error('no-uids-supplied');
 	}
 
-	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
+	return Promise.all(uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
 SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 	// Retrieve the hash and find matches
 	const { uids } = data;
-	
+
 	if (!uids.length) {
 		throw new Error('no-uids-supplied');
 	}
-	
-	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
+
+	return Promise.all(uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
 SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
 	if (!data.remoteId) {
 		throw new Error('no-remote-id-supplied');
 	}
-	
+
 	return plugin.getUser(data.remoteId);
 };
 
@@ -202,7 +202,7 @@ plugin.verifyUser = async (token, uid, isNewUser) => {
 		isNewUser: isNewUser,
 		token: token,
 	});
-	
+
 	// Check ban state of user
 	const isBanned = await user.bans.isBanned(uid);
 
@@ -217,15 +217,15 @@ plugin.findOrCreateUser = async (userData) => {
 	let isNewUser = false;
 	let userId = null;
 	let queries = [db.sortedSetScore(plugin.settings.name + ':uid', userData.id)];
-	
+
 	if (userData.email && userData.email.length) {
 		queries = [...queries, db.sortedSetScore('email:uid', userData.email)];
 	}
-	
+
 	let [uid, mergeUid] = await Promise.all(queries);
 	uid = parseInt(uid, 10);
 	mergeUid = parseInt(mergeUid, 10);
-	
+
 	/* check if found something to work with */
 	if (uid && !isNaN(uid)) {
 		try {
@@ -243,13 +243,13 @@ plugin.findOrCreateUser = async (userData) => {
 			winston.warn('[session-sharing] Error while testing user existance', error);
 		}
 	}
-	
+
 	if (!userId && mergeUid && !isNaN(mergeUid)) {
 		winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
 		await db.sortedSetAdd(plugin.settings.name + ':uid', mergeUid, id);
 		userId = mergeUid;
 	}
-	
+
 	/* create the user from payload if necessary */
 	winston.debug('createUser?', !userId);
 	if (!userId) {
@@ -281,7 +281,7 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 
 		return result;
 	}, {});
-	
+
 	if (Object.keys(obj).length) {
 		winston.debug('[session-sharing] Updating profile fields:', obj);
 		obj.uid = uid;
@@ -296,13 +296,13 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 			winston.warn('[session-sharing] Unable to update profile information for uid: ' + uid + '(' + error.message + ')');
 		}
 	}
-	
+
 	if (userData.picture) {
 		await db.setObjectField('user:' + uid, 'picture', userData.picture);
 	}
 };
 
-plugin.updateUserGroups = async (uid, userData, isNewUser) => {
+plugin.updateUserGroups = async (uid, userData) => {
 	if (!userData.groups || !Array.isArray(userData.groups)) {
 		return;
 	}
@@ -310,14 +310,14 @@ plugin.updateUserGroups = async (uid, userData, isNewUser) => {
 	// Retrieve user groups
 	let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
 	// Normalize user group data to just group names
-	userGroups = userGroups.map((groupObj) => groupObj.name);
-	
+	userGroups = userGroups.map(groupObj => groupObj.name);
+
 	// Build join and leave arrays
-	let join = userData.groups.filter((name) => !userGroups.includes(name));
+	let join = userData.groups.filter(name => !userGroups.includes(name));
 	if (plugin.settings.syncGroupList === 'on') {
-		join = join.filter((group) => plugin.settings.syncGroups.includes(group));
+		join = join.filter(group => plugin.settings.syncGroups.includes(group));
 	}
-	
+
 	let leave = userGroups.filter((name) => {
 		// `registered-users` is always a joined group
 		if (name === 'registered-users') {
@@ -327,7 +327,7 @@ plugin.updateUserGroups = async (uid, userData, isNewUser) => {
 		return !userData.groups.includes(name);
 	});
 	if (plugin.settings.syncGroupList === 'on') {
-		leave = leave.filter((group) => plugin.settings.syncGroups.includes(group));
+		leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
 	}
 
 	await executeJoinLeave(uid, join, leave);
@@ -340,21 +340,21 @@ async function executeJoinLeave(uid, join, leave) {
 				return;
 			}
 
-			await Promise.all(join.map((name) => groups.join(name, uid)));
+			await Promise.all(join.map(name => groups.join(name, uid)));
 		})(),
 		(async () => {
 			if (plugin.settings.syncGroupLeave !== 'on') {
 				return;
 			}
 
-			await Promise.all(leave.map((name) => groups.leave(name, uid)));
+			await Promise.all(leave.map(name => groups.leave(name, uid)));
 		})(),
 	]);
 }
 
 plugin.createUser = async (userData) => {
 	winston.verbose('[session-sharing] No user found, creating a new user for this login');
-	
+
 	const uid = await user.create(_.pick(userData, profileFields));
 	await db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id);
 	return uid;
@@ -427,26 +427,26 @@ plugin.addMiddleware = async function (req, res, next) {
 		await plugin.cleanup({ res: res });
 		return handleGuest.call(null, req, res, next);
 	}
-	
+
 	if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 		try {
 			const uid = await plugin.process(req.cookies[plugin.settings.cookieName]);
 			winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 			req.uid = uid;
-			
+
 			if (plugin.settings.behaviour === 'revalidate') {
 				res.locals.reroll = false;	// disable session rerolling in core
 			}
-			
+
 			await nbbAuthController.doLogin(req, uid);
-			
+
 			req.session.loginLock = true;
 			const url = req.session.returnTo || req.originalUrl.replace(nconf.get('relative_path'), '');
 			delete req.session.returnTo;
 			res.redirect(nconf.get('relative_path') + url);
 		} catch (error) {
 			let handleAsGuest = false;
-			
+
 			switch (error.message) {
 			case 'payload-invalid':
 				winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
@@ -503,7 +503,7 @@ plugin.cleanup = async (data) => {
 			path: '/',
 		});
 	}
-	
+
 	return true;
 };
 
