@@ -360,7 +360,7 @@ plugin.createUser = async (userData) => {
 	return uid;
 };
 
-plugin.addMiddleware = async function (req, res, next) {
+plugin.addMiddleware = async function ({ req, res }) {
 	const { hostWhitelist, guestRedirect, editOverride, loginOverride, registerOverride } = await meta.settings.get('session-sharing');
 
 	if (hostWhitelist) {
@@ -374,18 +374,16 @@ plugin.addMiddleware = async function (req, res, next) {
 		}
 
 		if (!whitelisted) {
-			return next();
+			return;
 		}
 	}
 
-	function handleGuest(req, res, next) {
+	function handleGuest(req, res) {
 		if (guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
 			// If a guest redirect is specified, follow it
 			res.redirect(guestRedirect.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
 		} else if (res.locals.fullRefresh === true) {
 			res.redirect(nconf.get('relative_path') + req.url);
-		} else {
-			next();
 		}
 	}
 
@@ -402,7 +400,7 @@ plugin.addMiddleware = async function (req, res, next) {
 		// Let requests through under "update" or "revalidate" behaviour only if they're logging in for the first time
 		delete req.session.loginLock;	// remove login lock for "update" or "revalidate" logins
 
-		return next();
+		return;
 	}
 
 	if (editOverride && hasSession && req.originalUrl.match(/\/user\/.*\/edit$/)) {
@@ -425,7 +423,7 @@ plugin.addMiddleware = async function (req, res, next) {
 		}
 
 		await plugin.cleanup({ res: res });
-		return handleGuest.call(null, req, res, next);
+		return handleGuest.call(null, req, res);
 	}
 
 	if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
@@ -468,29 +466,22 @@ plugin.addMiddleware = async function (req, res, next) {
 			});
 
 			if (data.handleAsGuest) {
-				return handleGuest.call(error, req, res, next);
+				return handleGuest.call(error, req, res);
 			}
 
-			return next(error);
+			throw error;
 		}
 	} else if (hasSession) {
-		try {
-			// Has login session but no cookie, can assume "revalidate" behaviour
-			const isAdmin = await user.isAdministrator(req.user.uid);
+		// Has login session but no cookie, can assume "revalidate" behaviour
+		const isAdmin = await user.isAdministrator(req.user.uid);
 
-			if (plugin.settings.behaviour !== 'update' && (plugin.settings.adminRevalidate === 'on' || !isAdmin)) {
-				req.logout();
-				res.locals.fullRefresh = true;
-				return handleGuest(req, res, next);
-			}
-
-			// Admins can bypass
-			return next();
-		} catch (error) {
-			return next(error);
+		if (plugin.settings.behaviour !== 'update' && (plugin.settings.adminRevalidate === 'on' || !isAdmin)) {
+			req.logout();
+			res.locals.fullRefresh = true;
+			return handleGuest(req, res);
 		}
 	} else {
-		return handleGuest.call(null, req, res, next);
+		return handleGuest.call(null, req, res);
 	}
 };
 
