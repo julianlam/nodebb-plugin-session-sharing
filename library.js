@@ -508,6 +508,10 @@ plugin.cleanup = async (data) => {
 };
 
 plugin.generate = function (req, res) {
+	if (!plugin.ready) {
+		return res.sendStatus(404);
+	}
+
 	let payload = {};
 	payload[plugin.settings['payload:id']] = 1;
 	payload[plugin.settings['payload:username']] = 'testUser';

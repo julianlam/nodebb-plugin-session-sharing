@@ -50,6 +50,8 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "husky": "^2.4.0",
-    "lint-staged": "^10.0.9"
+    "lint-staged": "^10.0.9",
+    "request": "^2.88.2",
+    "request-promise-native": "^1.0.9"
   }
 }
