@@ -100,17 +100,6 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 	return Promise.all(uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
-SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
-	// Retrieve the hash and find matches
-	const { uids } = data;
-
-	if (!uids.length) {
-		throw new Error('no-uids-supplied');
-	}
-
-	return Promise.all(uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
-};
-
 SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
 	if (!data.remoteId) {
 		throw new Error('no-remote-id-supplied');
