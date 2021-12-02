@@ -484,6 +484,12 @@ plugin.cleanup = async (data) => {
 		});
 	}
 
+	data.res.clearCookie('nbb_token', {
+		domain: plugin.settings.cookieDomain,
+		expires: new Date(),
+		path: '/',
+	});
+
 	return true;
 };
 
@@ -576,6 +582,24 @@ plugin.appendTemplate = async (data) => {
 
 	delete data.req.session.sessionSharing;
 	return data;
+};
+
+plugin.saveReverseToken = async ({ req, userData: data }) => {
+	if (!plugin.ready || plugin.settings.reverseToken !== 'on') {
+		return;	// no reverse token if secret not set
+	}
+
+	const res = req.res;
+	const userData = await user.getUserFields(data.uid, ['uid', 'username', 'picture', 'reputation', 'postcount', 'banned']);
+	const token = jwt.sign(userData, plugin.settings.secret);
+
+	res.cookie('nbb_token', token, {
+		maxAge: meta.getSessionTTLSeconds() * 1000,
+		httpOnly: !req.secure,
+		domain: plugin.settings.cookieDomain,
+	});
+
+	winston.info(`[plugins/session-sharing] Saving reverse cookie for uid ${userData.uid}, session: ${req.session.id}`);
 };
 
 module.exports = plugin;
