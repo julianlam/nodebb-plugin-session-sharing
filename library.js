@@ -591,6 +591,7 @@ plugin.saveReverseToken = async ({ req, userData: data }) => {
 
 	const res = req.res;
 	const userData = await user.getUserFields(data.uid, ['uid', 'username', 'picture', 'reputation', 'postcount', 'banned']);
+	userData.groups = (await groups.getUserGroups([data.uid])).pop();
 	const token = jwt.sign(userData, plugin.settings.secret);
 
 	res.cookie('nbb_token', token, {
