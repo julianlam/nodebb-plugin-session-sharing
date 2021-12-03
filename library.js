@@ -569,7 +569,7 @@ plugin.reloadSettings = async (data) => {
 };
 
 plugin.appendTemplate = async (data) => {
-	if (!data.req.session.sessionSharing || !data.req.session.sessionSharing.banned) {
+	if (!data.req.session || !data.req.session.sessionSharing || !data.req.session.sessionSharing.banned) {
 		return data;
 	}
 
