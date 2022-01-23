@@ -20,7 +20,7 @@ $(document).ready(function () {
 	}
 
 	function isEditUrl(url) {
-		return url.match(/^user\/.*\/edit$/);
+		return url.match(/^user\/.*\/edit(\/\w+)?$/);
 	}
 
 	$(window).on('action:app.loggedOut', function (evt, data) {

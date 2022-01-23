@@ -392,7 +392,7 @@ plugin.addMiddleware = async function ({ req, res }) {
 		return;
 	}
 
-	if (editOverride && hasSession && req.originalUrl.match(/\/user\/.*\/edit$/)) {
+	if (editOverride && hasSession && req.originalUrl.match(/\/user\/.*\/edit(\/\w+)?$/)) {
 		return res.redirect(editOverride.replace('%1', encodeURIComponent(req.protocol + '://' + req.get('host') + req.originalUrl)));
 	}
 	if (loginOverride && req.originalUrl.match(/\/login$/)) {
