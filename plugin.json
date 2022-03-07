@@ -18,9 +18,9 @@
 	"scripts": [
 		"static/lib/main.js"
 	],
-	"acpScripts": [
-		"static/lib/admin.js"
-	],
+	"modules": {
+		"../admin/plugins/session-sharing.js": "./static/lib/admin.js"
+	},
 	"upgrades": [
 		"upgrades/session_sharing_hash_to_zset.js"
 	],
