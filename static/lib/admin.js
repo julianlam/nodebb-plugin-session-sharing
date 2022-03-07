@@ -6,7 +6,6 @@ define('admin/plugins/session-sharing', ['settings', 'alerts'], function (Settin
 	var ACP = {};
 
 	ACP.init = function () {
-		console.log('derpy derp');
 		Settings.load('session-sharing', $('.session-sharing-settings'));
 
 		$('#save').on('click', function () {
