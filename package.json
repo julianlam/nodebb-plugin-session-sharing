@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@commitlint/cli": "^9.1.2",
-    "async": "^2",
+    "async": "^3",
     "eslint": "^7.7.0",
     "jsonwebtoken": "^8.5.1",
     "lint-staged": "^10.0.9",
