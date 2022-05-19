@@ -596,7 +596,7 @@ plugin.saveReverseToken = async ({ req, userData: data }) => {
 
 	res.cookie('nbb_token', token, {
 		maxAge: meta.getSessionTTLSeconds() * 1000,
-		httpOnly: !req.secure,
+		httpOnly: true,
 		domain: plugin.settings.cookieDomain,
 	});
 
