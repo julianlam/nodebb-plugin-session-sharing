@@ -421,7 +421,7 @@ plugin.addMiddleware = async function ({ req, res }) {
 			winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 			req.uid = uid;
 
-			if (plugin.settings.behaviour === 'revalidate') {
+			if (plugin.settings.behaviour === 'revalidate' || plugin.settings.behaviour === 'update') {
 				res.locals.reroll = false;	// disable session rerolling in core
 			}
 
