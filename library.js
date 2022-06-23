@@ -211,9 +211,20 @@ plugin.findOrCreateUser = async (userData) => {
 		queries = [...queries, db.sortedSetScore('email:uid', userData.email)];
 	}
 
-	let [uid, mergeUid] = await Promise.all(queries);
+	if (userData.username && userData.username.length) {
+		queries = [...queries, db.sortedSetScore('username:uid', userData.username)];
+	} 
+
+	let [uid, mergeUidFirst, mergeUidSecond] = await Promise.all(queries);
 	uid = parseInt(uid, 10);
-	mergeUid = parseInt(mergeUid, 10);
+
+	const mergeUidFirstNumber = parseInt(mergeUidFirst, 10);
+	const mergeUidSecondNumber = parseInt(mergeUidSecond, 10);
+	const mergeUid = !isNaN(mergeUidFirstNumber)
+					? mergeUidFirstNumber
+					: !isNaN(mergeUidSecondNumber)
+						? mergeUidSecondNumber
+						: null;
 
 	/* check if found something to work with */
 	if (uid && !isNaN(uid)) {
@@ -233,8 +244,8 @@ plugin.findOrCreateUser = async (userData) => {
 		}
 	}
 
-	if (!userId && mergeUid && !isNaN(mergeUid)) {
-		winston.info('[session-sharing] Found user via their email, associating this id (' + id + ') with their NodeBB account');
+	if (!userId && mergeUid) {
+		winston.info('[session-sharing] Found user via their email or username, associating this id (' + id + ') with their NodeBB account');
 		await db.sortedSetAdd(plugin.settings.name + ':uid', mergeUid, id);
 		userId = mergeUid;
 	}
