@@ -12,9 +12,6 @@
 		{ "hook": "action:settings.set", "method": "reloadSettings" },
 		{ "hook": "action:login.continue", "method": "saveReverseToken" }
 	],
-	"less": [
-		"static/style.less"
-	],
 	"scripts": [
 		"static/lib/main.js"
 	],
