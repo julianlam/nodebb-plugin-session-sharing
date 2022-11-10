@@ -21,7 +21,7 @@
   },
   "readmeFilename": "README.md",
   "nbbpm": {
-    "compatibility": "^2.5.0"
+    "compatibility": "^3.0.0"
   },
   "husky": {
     "hooks": {
