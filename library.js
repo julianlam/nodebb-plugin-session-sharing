@@ -420,13 +420,12 @@ plugin.addMiddleware = async function ({ req, res }) {
 	if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
 		try {
 			const uid = await plugin.process(req.cookies[plugin.settings.cookieName]);
-			winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
-			req.uid = uid;
-
-			if (plugin.settings.behaviour === 'revalidate' || plugin.settings.behaviour === 'update') {
-				res.locals.reroll = false;	// disable session rerolling in core
+			if (uid === req.uid) {
+				winston.verbose(`[session-sharing] Re-validated login for uid ${uid}, path ${req.originalUrl}`);
+				return;
 			}
 
+			winston.verbose('[session-sharing] Processing login for uid ' + uid + ', path ' + req.originalUrl);
 			await nbbAuthController.doLogin(req, uid);
 
 			req.session.loginLock = true;
@@ -467,6 +466,7 @@ plugin.addMiddleware = async function ({ req, res }) {
 		const isAdmin = await user.isAdministrator(req.user.uid);
 
 		if (plugin.settings.behaviour !== 'update' && (plugin.settings.adminRevalidate === 'on' || !isAdmin)) {
+			winston.verbose(`[session-sharing] Found login session but no cookie, logging out user (was uid ${req.uid})`);
 			await logoutAsync(req);
 			res.locals.fullRefresh = true;
 			return handleGuest(req, res);
