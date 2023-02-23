@@ -2,22 +2,14 @@
 
 /* globals define, $, socket, config */
 
-define('admin/plugins/session-sharing', ['settings', 'alerts'], function (Settings, alerts) {
+define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 	var ACP = {};
 
 	ACP.init = function () {
 		Settings.load('session-sharing', $('.session-sharing-settings'));
 
 		$('#save').on('click', function () {
-			Settings.save('session-sharing', $('.session-sharing-settings'), function () {
-				alerts.alert({
-					type: 'success',
-					alert_id: 'session-sharing-saved',
-					title: 'Settings Saved',
-					message: 'No restart/reload is required',
-					timeout: 5000,
-				});
-			});
+			Settings.save('session-sharing', $('.session-sharing-settings'));
 		});
 
 		$('#search').on('keyup', ACP.showUserId);
@@ -35,14 +27,17 @@ define('admin/plugins/session-sharing', ['settings', 'alerts'], function (Settin
 		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
 
+			const resultEl = $('#result');
+			if (!element.val()) {
+				return resultEl.text('');
+			}
+
 			var qs = decodeURIComponent($.param({
 				query: element.val(),
 			}));
 
 			$.get(config.relative_path + '/api/admin/manage/users?' + qs)
 				.then(function (results) {
-					var resultEl = $('#result');
-
 					if (results.users.length) {
 						socket.emit('plugins.sessionSharing.showUserIds', {
 							uids: results.users.map(function (user) {
@@ -78,6 +73,10 @@ define('admin/plugins/session-sharing', ['settings', 'alerts'], function (Settin
 
 		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
+
+			if (!element.val()) {
+				return $('#local_result').text('');
+			}
 
 			socket.emit('plugins.sessionSharing.findUserByRemoteId', {
 				remoteId: element.val(),

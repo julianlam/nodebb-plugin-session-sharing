@@ -263,10 +263,8 @@
 		</div>
 		<div class="col-md-3">
 			<div class="card">
-				<div class="card-header">
-					<span class="fs-4">User Search</span>
-				</div>
 				<div class="card-body">
+					<h5 class="card-title">User Search</h5>
 					<input type="text" class="form-control" id="search" />
 					<p class="form-text">
 						Search for a username here to find their associated unique ID.
@@ -275,10 +273,8 @@
 				</div>
 			</div>
 			<div class="card">
-				<div class="card-header">
-					<span class="fs-4">Remote ID Search</span>
-				</div>
 				<div class="card-body">
+					<h5 class="card-title">Remote ID Search</h5>
 					<input type="text" class="form-control" id="remote_search" />
 					<p class="form-text">
 						Enter a remote ID here to find their NodeBB user profile.
@@ -290,6 +286,5 @@
 	</div>
 </form>
 
-<button id="save" class="floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
-	<i class="material-icons">save</i>
-</button>
+<!-- IMPORT admin/partials/save_button.tpl -->
+
