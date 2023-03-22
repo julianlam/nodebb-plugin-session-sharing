@@ -587,7 +587,7 @@ plugin.appendTemplate = async (data) => {
 };
 
 plugin.saveReverseToken = async ({ req, userData: data }) => {
-	if (!plugin.ready || plugin.settings.reverseToken !== 'on') {
+	if (!plugin.ready || !data || plugin.settings.reverseToken !== 'on') {
 		return;	// no reverse token if secret not set
 	}
 
