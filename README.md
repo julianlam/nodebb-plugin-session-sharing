@@ -18,11 +18,6 @@ if the requisite shared cookie is found (more on that below).
 
 You can use this plugin and single sign-on plugins together, but they won't be seamlessly integrated.
 
-## Compatibility
-
-This plugin is compatible with NodeBB **v1.0.0 and up**. As of 27 January 2016, v1.0.0 has not been released
-yet, so you will need to be running the `master` branch of a NodeBB installation via GitHub.
-
 ## How does this work?
 
 This plugin checks incoming requests for a **shared cookie** that is saved by your application when a user
