@@ -54,6 +54,8 @@ const plugin = {
 	},
 };
 
+plugin.defaults = Object.freeze({ ...plugin.settings });
+
 payloadKeys.forEach(function (key) {
 	plugin.settings['payload:' + key] = key;
 });
@@ -566,7 +568,7 @@ plugin.reloadSettings = async (data) => {
 	}
 
 	winston.info('[session-sharing] Settings OK');
-	plugin.settings = _.defaults(_.pickBy(settings, Boolean), plugin.settings);
+	plugin.settings = _.defaults(_.pickBy(settings, Boolean), plugin.defaults);
 	plugin.ready = true;
 };
 
