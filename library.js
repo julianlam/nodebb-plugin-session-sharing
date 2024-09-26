@@ -99,7 +99,7 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 		throw new Error('no-uids-supplied');
 	}
 
-	return Promise.all(uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
+	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
 };
 
 SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
@@ -301,12 +301,12 @@ plugin.updateUserGroups = async (uid, userData) => {
 	// Retrieve user groups
 	let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
 	// Normalize user group data to just group names
-	userGroups = userGroups.map(groupObj => groupObj.name);
+	userGroups = userGroups.map((groupObj) => groupObj.name);
 
 	// Build join and leave arrays
-	let join = userData.groups.filter(name => !userGroups.includes(name));
+	let join = userData.groups.filter((name) => !userGroups.includes(name));
 	if (plugin.settings.syncGroupList === 'on') {
-		join = join.filter(group => plugin.settings.syncGroups.includes(group));
+		join = join.filter((group) => plugin.settings.syncGroups.includes(group));
 	}
 
 	let leave = userGroups.filter((name) => {
@@ -318,7 +318,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 		return !userData.groups.includes(name);
 	});
 	if (plugin.settings.syncGroupList === 'on') {
-		leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
+		leave = leave.filter((group) => plugin.settings.syncGroups.includes(group));
 	}
 
 	await executeJoinLeave(uid, join, leave);
@@ -331,14 +331,14 @@ async function executeJoinLeave(uid, join, leave) {
 				return;
 			}
 
-			await Promise.all(join.map(name => groups.join(name, uid)));
+			await Promise.all(join.map((name) => groups.join(name, uid)));
 		})(),
 		(async () => {
 			if (plugin.settings.syncGroupLeave !== 'on') {
 				return;
 			}
 
-			await Promise.all(leave.map(name => groups.leave(name, uid)));
+			await Promise.all(leave.map((name) => groups.leave(name, uid)));
 		})(),
 	]);
 }
