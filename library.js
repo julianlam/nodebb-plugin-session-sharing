@@ -54,11 +54,11 @@ const plugin = {
 	},
 };
 
-plugin.defaults = Object.freeze({ ...plugin.settings });
-
 payloadKeys.forEach(function (key) {
 	plugin.settings['payload:' + key] = key;
 });
+
+plugin.defaults = Object.freeze({ ...plugin.settings });
 
 plugin.init = async (params) => {
 	var router = params.router;
