@@ -156,7 +156,7 @@ plugin.normalizePayload = async (payload) => {
 		}
 	});
 
-	if (!userData.id) {
+	if (!userData.hasOwnProperty('id')) {
 		winston.warn('[session-sharing] No user id was given in payload');
 		throw new Error('payload-invalid');
 	}
