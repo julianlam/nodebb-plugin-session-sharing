@@ -80,8 +80,8 @@ $(document).ready(function () {
 			data.url = null;
 			redirect(config.sessionSharing.registerOverride, e);
 		}
-
-		if (config.sessionSharing.loginOverride && data.url.startsWith('login')) {
+		const params = utils.params();
+		if (config.sessionSharing.loginOverride && data.url.startsWith('login') && params && !params.local) {
 			data.url = null;
 			redirect(config.sessionSharing.loginOverride, e);
 		}
