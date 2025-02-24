@@ -169,6 +169,16 @@
 						<label class="form-label" for="payload:email">Email</label>
 						<input type="text" id="payload:email" name="payload:email" title="Email" class="form-control" placeholder="email">
 					</div>
+					<div class="form-check mb-3">
+						<input class="form-check-input" type="checkbox" id="trustPayloadEmail" name="trustPayloadEmail" />
+						<label class="form-check-label">
+							<span>Trust the email provided</span>
+						</label>
+						<p class="form-text">
+							If enabled, the email provided will be automatically verified.
+							Otherwise, the user will be emailed a confirmation link.
+						</p>
+					</div>
 					<div class="mb-3">
 						<label class="form-label" for="payload:username">Username</label>
 						<input type="text" id="payload:username" name="payload:username" title="Username" class="form-control" placeholder="username">

@@ -279,7 +279,17 @@ plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 		winston.debug('[session-sharing] Updating profile fields:', obj);
 		obj.uid = uid;
 		try {
+			const { trustPayloadEmail } = await meta.settings.get('session-sharing');
+			let email = '';
+			if (trustPayloadEmail === 'on') {
+				email = obj.email;
+				delete obj.email;
+			}
 			userObj = await user.updateProfile(uid, obj);
+			if (trustPayloadEmail && email) {
+				await user.setUserField(uid, 'email', email);
+				await user.email.confirmByUid(uid, 0);
+			}
 
 			// If it errors out, not that big of a deal, continue anyway.
 			if (!userObj) {
