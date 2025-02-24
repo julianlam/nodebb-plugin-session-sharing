@@ -49,7 +49,8 @@ $(document).ready(function () {
 		}
 
 		if (config.sessionSharing.loginOverride) {
-			if (data.url === 'login') {
+			const params = utils.params();
+			if (data.url === 'login' && params && !params.local) {
 				$('#content').html('');
 				redirect(config.sessionSharing.loginOverride, e);
 			}
