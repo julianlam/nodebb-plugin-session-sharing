@@ -1,9 +1,12 @@
-<form role="form" class="session-sharing-settings">
-	<div class="row">
-		<div class="col-md-9">
-			<div class="row">
-				<div class="col-sm-2 col-12 settings-header">General</div>
-				<div class="col-sm-10 col-12">
+<div class="acp-page-container">
+	<!-- IMPORT admin/partials/settings/header.tpl -->
+
+	<div class="row m-0">
+		<div id="spy-container" class="col-12 col-md-8 px-0 mb-4" tabindex="0">
+			<form role="form" class="session-sharing-settings">
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">General</h5>
+
 					<div class="mb-3">
 						<label class="form-label" for="name">Base Name</label>
 						<input type="text" id="name" name="name" title="Base Name" class="form-control" placeholder="appId" />
@@ -37,10 +40,10 @@
 						</p>
 					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-2 col-12 settings-header">Session Handling</div>
-				<div class="col-sm-10 col-12">
+
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">Session Handling</h5>
+
 					<div class="mb-3">
 						<label class="form-label" for="behaviour">Cookie changes</label>
 						<select class="form-control" name="behaviour" id="behaviour">
@@ -53,7 +56,7 @@
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" id="adminRevalidate" name="adminRevalidate" />
 						<label class="form-check-label">
-							<span><strong>Apply revalidation rules to administrators as well</strong></span>
+							<span>Apply revalidation rules to administrators as well</span>
 						</label>
 						<p class="form-text">
 							Administrators are exempt from the <code>revalidate</code> behaviour because a
@@ -67,7 +70,7 @@
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" id="noRegistration" name="noRegistration" />
 						<label class="form-check-label">
-							<span><strong>Do not automatically create NodeBB accounts for unrecognized users</strong></span>
+							<span>Do not automatically create NodeBB accounts for unrecognized users</span>
 						</label>
 						<p class="form-text">
 							By default, an unrecognized user id found in a payload cookie will have a local NodeBB account automatically created for it. If enabled,
@@ -77,7 +80,7 @@
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" id="updateProfile" name="updateProfile" />
 						<label class="form-check-label">
-							<span><strong>Automatically update local profile information with information found in shared cookie</strong></span>
+							<span>Automatically update local profile information with information found in shared cookie</span>
 						</label>
 						<div class="form-text">
 							Basic information such as username and id are required, while others are optional (first name, last name, etc.). Enable this setting to allow
@@ -87,28 +90,28 @@
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" id="allowBannedUsers" name="allowBannedUsers" />
 						<label class="form-check-label">
-							<span><strong>Allow banned users to be logged in and placed into banned user group</strong></span>
+							<span>Allow banned users to be logged in and placed into banned user group</span>
 						</label>
 						<p class="form-text">
 							By default banned users arent logged in and an error is thrown. If enabled, banned users are logged in and placed in the banned group.
 						</p>
 					</div>
-					<div class="form-check">
+					<div class="form-check mb-3">
 						<input class="form-check-input" type="checkbox" id="syncGroupJoin" name="syncGroupJoin" />
 						<label class="form-check-label">
-							<span><strong>Automatically join groups if present in payload</strong></span>
+							<span>Automatically join groups if present in payload</span>
 						</label>
 					</div>
-					<div class="form-check">
+					<div class="form-check mb-3">
 						<input class="form-check-input" type="checkbox" id="syncGroupLeave" name="syncGroupLeave" />
 						<label class="form-check-label">
-							<span><strong>Automatically leave groups if not present in payload</strong></span>
+							<span>Automatically leave groups if not present in payload</span>
 						</label>
 					</div>
-					<div class="form-check">
+					<div class="form-check mb-3">
 						<input class="form-check-input" type="checkbox" id="syncGroupList" name="syncGroupList" />
 						<label class="form-check-label">
-							<span><strong>Select groups to join/leave</strong></span>
+							<span>Select groups to join/leave</span>
 						</label>
 					</div>
 					<select class="form-select mb-3" id="syncGroups" name="syncGroups" multiple size="10">
@@ -146,10 +149,9 @@
 						</p>
 					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-2 col-12 settings-header">Payload Keys</div>
-				<div class="col-sm-10 col-12">
+
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">Payload Keys</h5>
 					<p>
 						In general, you should not need to change these values, as you should be adjusting your app's cookie's
 						JWT payload keys to match the defaults. However if circumstances require you to have different values,
@@ -158,6 +160,7 @@
 					<p class="form-text">
 						Default values are shown as placeholders in the corresponding input fields.
 					</p>
+
 					<div class="mb-3">
 						<label class="form-label" for="name">Unique ID</label>
 						<input type="text" id="payload:id" name="payload:id" title="Unique ID" class="form-control" placeholder="id">
@@ -225,10 +228,10 @@
 						</p>
 					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-2 col-12 settings-header">Guest Handling</div>
-				<div class="col-sm-10 col-12">
+
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">Guest Handling</h5>
+
 					<div class="mb-3">
 						<label class="form-label" for="guestRedirect">Re-direct unauthenticated sessions (guests) to this address</label>
 						<input type="text" id="guestRedirect" name="guestRedirect" class="form-control" placeholder="https://...">
@@ -240,10 +243,10 @@
 						</p>
 					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-2 col-12 settings-header">Reverse Token</div>
-				<div class="col-sm-10 col-12">
+
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">Reverse Token</h5>
+
 					<div class="mb-3">
 						<div class="form-check">
 							<input type="checkbox" class="form-check-input" id="reverseToken" name="reverseToken">
@@ -259,32 +262,37 @@
 						</p>
 					</div>
 				</div>
-			</div>
-		</div>
-		<div class="col-md-3">
-			<div class="card">
-				<div class="card-body">
-					<h5 class="card-title">User Search</h5>
-					<input type="text" class="form-control" id="search" />
-					<p class="form-text">
-						Search for a username here to find their associated unique ID.
-					</p>
-					<p id="result"></p>
+
+				<div class="mb-4">
+					<h5 class="fw-bold tracking-tight settings-header">Account Search</h5>
+					<div class="col">
+						<div class="card">
+							<div class="card-body">
+								<h5 class="card-title">User Search</h5>
+								<input type="text" class="form-control" id="search" />
+								<p class="form-text">
+									Search for a username here to find their associated unique ID.
+								</p>
+								<p id="result"></p>
+							</div>
+						</div>
+					</div>
+					<div class="col">
+						<div class="card">
+							<div class="card-body">
+								<h5 class="card-title">Remote ID Search</h5>
+								<input type="text" class="form-control" id="remote_search" />
+								<p class="form-text">
+									Enter a remote ID here to find their NodeBB user profile.
+								</p>
+								<p id="local_result"></p>
+							</div>
+						</div>
+					</div>
 				</div>
-			</div>
-			<div class="card">
-				<div class="card-body">
-					<h5 class="card-title">Remote ID Search</h5>
-					<input type="text" class="form-control" id="remote_search" />
-					<p class="form-text">
-						Enter a remote ID here to find their NodeBB user profile.
-					</p>
-					<p id="local_result"></p>
-				</div>
-			</div>
+			</form>
 		</div>
+
+		<!-- IMPORT admin/partials/settings/toc.tpl -->
 	</div>
-</form>
-
-<!-- IMPORT admin/partials/save_button.tpl -->
-
+</div>
