@@ -151,7 +151,7 @@ plugin.normalizePayload = async (payload) => {
 
 	payloadKeys.forEach(function (key) {
 		const propName = plugin.settings['payload:' + key];
-		if (payload[propName]) {
+		if (payload.hasOwnProperty(propName)) {
 			userData[key] = payload[propName];
 		}
 	});
@@ -160,8 +160,10 @@ plugin.normalizePayload = async (payload) => {
 		winston.warn('[session-sharing] No user id was given in payload');
 		throw new Error('payload-invalid');
 	}
-
-	userData.fullname = (userData.fullname || [userData.firstName, userData.lastName].join(' ')).trim();
+	const setFullname = userData.hasOwnProperty('fullname') || userData.hasOwnProperty('firstName') || userData.hasOwnProperty('lastName');
+	if (setFullname) {
+		userData.fullname = (userData.fullname || [userData.firstName, userData.lastName].join(' ')).trim();
+	}
 
 	if (!userData.username) {
 		userData.username = userData.fullname;
