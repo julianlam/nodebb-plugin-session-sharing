@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/julianlam/nodebb-plugin-session-sharing"
   },
+  "scripts": {
+    "lint": "eslint ."
+  },
   "keywords": [
     "nodebb",
     "plugin"
@@ -21,7 +24,7 @@
   },
   "readmeFilename": "README.md",
   "nbbpm": {
-    "compatibility": "^3.0.0"
+    "compatibility": "^3.2.0 || ^4.x"
   },
   "husky": {
     "hooks": {
@@ -38,7 +41,6 @@
   "dependencies": {
     "@commitlint/cli": "^9.1.2",
     "async": "^3",
-    "eslint": "^7.7.0",
     "jsonwebtoken": "^8.5.1",
     "lint-staged": "^10.0.9",
     "lodash": "^4.17.14"
@@ -46,10 +48,8 @@
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-angular": "^7.1.2",
-    "eslint": "8.x",
-    "eslint-config-airbnb-base": "14.2.1",
-    "eslint-config-nodebb": "0.1.1",
-    "eslint-plugin-import": "2.x",
+    "eslint": "9.26.0",
+    "eslint-config-nodebb": "^1.1.4",
     "husky": "^2.4.0",
     "lint-staged": "^10.0.9",
     "request": "^2.88.2",

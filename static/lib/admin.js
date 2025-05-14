@@ -1,7 +1,5 @@
 'use strict';
 
-/* globals define, $, socket, config */
-
 define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 	var ACP = {};
 

@@ -14,6 +14,7 @@ const groups = require.main.require('./src/groups');
 const SocketPlugins = require.main.require('./src/socket.io/plugins');
 const db = require.main.require('./src/database');
 const plugins = require.main.require('./src/plugins');
+const routeHelpers = require.main.require('./src/routes/helpers');
 
 const controllers = require('./lib/controllers');
 const nbbAuthController = require.main.require('./src/controllers/authentication');
@@ -61,11 +62,9 @@ payloadKeys.forEach(function (key) {
 plugin.defaults = Object.freeze({ ...plugin.settings });
 
 plugin.init = async (params) => {
-	var router = params.router;
-	var hostMiddleware = params.middleware;
+	const { router } = params;
 
-	router.get('/admin/plugins/session-sharing', hostMiddleware.admin.buildHeader, controllers.renderAdminPage);
-	router.get('/api/admin/plugins/session-sharing', controllers.renderAdminPage);
+	routeHelpers.setupAdminPageRoute(router, '/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 	router.post('/api/session-sharing/user', controllers.process);
@@ -101,7 +100,9 @@ SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
 		throw new Error('no-uids-supplied');
 	}
 
-	return Promise.all(uids.map(async (uid) => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid)));
+	return Promise.all(
+		uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid))
+	);
 };
 
 SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
@@ -115,7 +116,7 @@ SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
 /* End Websocket Listeners */
 
 /*
- *	Given a remoteId, show user data
+ * Given a remoteId, show user data
  */
 plugin.getUser = async (remoteId) => {
 	const uid = await db.sortedSetScore(plugin.settings.name + ':uid', remoteId);
@@ -315,12 +316,12 @@ plugin.updateUserGroups = async (uid, userData) => {
 	// Retrieve user groups
 	let [userGroups] = await groups.getUserGroupsFromSet('groups:createtime', [uid]);
 	// Normalize user group data to just group names
-	userGroups = userGroups.map((groupObj) => groupObj.name);
+	userGroups = userGroups.map(groupObj => groupObj.name);
 
 	// Build join and leave arrays
-	let join = userData.groups.filter((name) => !userGroups.includes(name));
+	let join = userData.groups.filter(name => !userGroups.includes(name));
 	if (plugin.settings.syncGroupList === 'on') {
-		join = join.filter((group) => plugin.settings.syncGroups.includes(group));
+		join = join.filter(group => plugin.settings.syncGroups.includes(group));
 	}
 
 	let leave = userGroups.filter((name) => {
@@ -332,7 +333,7 @@ plugin.updateUserGroups = async (uid, userData) => {
 		return !userData.groups.includes(name);
 	});
 	if (plugin.settings.syncGroupList === 'on') {
-		leave = leave.filter((group) => plugin.settings.syncGroups.includes(group));
+		leave = leave.filter(group => plugin.settings.syncGroups.includes(group));
 	}
 
 	await executeJoinLeave(uid, join, leave);
@@ -345,14 +346,14 @@ async function executeJoinLeave(uid, join, leave) {
 				return;
 			}
 
-			await Promise.all(join.map((name) => groups.join(name, uid)));
+			await Promise.all(join.map(name => groups.join(name, uid)));
 		})(),
 		(async () => {
 			if (plugin.settings.syncGroupLeave !== 'on') {
 				return;
 			}
 
-			await Promise.all(leave.map((name) => groups.leave(name, uid)));
+			await Promise.all(leave.map(name => groups.leave(name, uid)));
 		})(),
 	]);
 }
@@ -397,13 +398,13 @@ plugin.addMiddleware = async function ({ req, res }) {
 	const hasLoginLock = req.session.hasOwnProperty('loginLock');
 
 	if (
-		!plugin.ready ||	// plugin not ready
-		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
+		!plugin.ready || // plugin not ready
+		(plugin.settings.behaviour === 'trust' && hasSession) || // user logged in + "trust" behaviour
 		((plugin.settings.behaviour === 'revalidate' || plugin.settings.behaviour === 'update') && hasLoginLock) ||
-		req.originalUrl.startsWith(nconf.get('relative_path') + '/api')	// api routes
+		req.originalUrl.startsWith(nconf.get('relative_path') + '/api') // api routes
 	) {
 		// Let requests through under "update" or "revalidate" behaviour only if they're logging in for the first time
-		delete req.session.loginLock;	// remove login lock for "update" or "revalidate" logins
+		delete req.session.loginLock; // remove login lock for "update" or "revalidate" logins
 
 		return;
 	}
@@ -431,7 +432,9 @@ plugin.addMiddleware = async function ({ req, res }) {
 		return handleGuest.call(null, req, res);
 	}
 
-	if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
+	if (Object.keys(req.cookies).length &&
+		req.cookies.hasOwnProperty(plugin.settings.cookieName) &&
+		req.cookies[plugin.settings.cookieName].length) {
 		try {
 			const uid = await plugin.process(req.cookies[plugin.settings.cookieName]);
 			if (uid === req.uid) {
@@ -450,16 +453,16 @@ plugin.addMiddleware = async function ({ req, res }) {
 			let handleAsGuest = false;
 
 			switch (error.message) {
-			case 'payload-invalid':
-				winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
-				break;
-			case 'no-match':
-				winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
-				handleAsGuest = true;
-				break;
-			default:
-				winston.warn('[session-sharing] Error encountered while parsing token: ' + error.message);
-				break;
+				case 'payload-invalid':
+					winston.warn('[session-sharing] The passed-in payload was invalid and could not be processed');
+					break;
+				case 'no-match':
+					winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
+					handleAsGuest = true;
+					break;
+				default:
+					winston.warn('[session-sharing] Error encountered while parsing token: ' + error.message);
+					break;
 			}
 
 			const data = await plugins.hooks.fire('filter:sessionSharing.error', {
@@ -602,10 +605,10 @@ plugin.appendTemplate = async (data) => {
 
 plugin.saveReverseToken = async ({ req, userData: data }) => {
 	if (!plugin.ready || !data || plugin.settings.reverseToken !== 'on') {
-		return;	// no reverse token if secret not set
+		return; // no reverse token if secret not set
 	}
 
-	const res = req.res;
+	const { res } = req;
 	const userData = await user.getUserFields(data.uid, ['uid', 'username', 'picture', 'reputation', 'postcount', 'banned']);
 	userData.groups = (await groups.getUserGroups([data.uid])).pop();
 	const token = jwt.sign(userData, plugin.settings.secret);

@@ -10,7 +10,6 @@ const url = require('url');
 const util = require('util');
 const request = require('request-promise-native');
 
-// eslint-disable-next-line no-unused-vars
 const db = require.main.require('./test/mocks/databasemock');
 
 const nconf = require.main.require('nconf');

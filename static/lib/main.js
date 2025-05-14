@@ -1,7 +1,5 @@
 'use strict';
 
-/* globals document, $, window, config, ajaxify, bootbox */
-
 $(document).ready(function () {
 	if (config.sessionSharing && config.sessionSharing.hostWhitelist) {
 		var hosts = config.sessionSharing.hostWhitelist.split(',') || [config.sessionSharing.hostWhitelist];
