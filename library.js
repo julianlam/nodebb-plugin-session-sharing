@@ -64,7 +64,7 @@ plugin.defaults = Object.freeze({ ...plugin.settings });
 plugin.init = async (params) => {
 	const { router } = params;
 
-	routeHelpers.setupAdminPageRoute(router, '/plugins/session-sharing', controllers.renderAdminPage);
+	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/session-sharing', controllers.renderAdminPage);
 
 	router.get('/api/session-sharing/lookup', controllers.retrieveUser);
 	router.post('/api/session-sharing/user', controllers.process);
