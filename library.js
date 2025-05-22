@@ -498,14 +498,12 @@ plugin.cleanup = async (data) => {
 		winston.verbose('[session-sharing] Clearing cookie');
 		data.res.clearCookie(plugin.settings.cookieName, {
 			domain: plugin.settings.cookieDomain,
-			expires: new Date(),
 			path: '/',
 		});
 	}
 
 	data.res.clearCookie('nbb_token', {
 		domain: plugin.settings.cookieDomain,
-		expires: new Date(),
 		path: '/',
 	});
 
