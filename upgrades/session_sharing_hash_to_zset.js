@@ -1,10 +1,10 @@
 'use strict';
 
-const winston = require.main.require('winston');
+const winston = nodebb.require('winston');
 
-const db = require.main.require('./src/database');
-const batch = require.main.require('./src/batch');
-const meta = require.main.require('./src/meta');
+const db = nodebb.require('./src/database');
+const batch = nodebb.require('./src/batch');
+const meta = nodebb.require('./src/meta');
 
 module.exports = {
 	name: 'Convert remote-to-local user ID from hash to sorted set',

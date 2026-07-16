@@ -1,23 +1,23 @@
 'use strict';
 
-const winston = module.parent.require('winston');
-const nconf = module.parent.require('nconf');
+const winston = nodebb.require('winston');
+const nconf = nodebb.require('nconf');
 
 const util = require('util');
 
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 
-const meta = require.main.require('./src/meta');
-const user = require.main.require('./src/user');
-const groups = require.main.require('./src/groups');
-const SocketPlugins = require.main.require('./src/socket.io/plugins');
-const db = require.main.require('./src/database');
-const plugins = require.main.require('./src/plugins');
-const routeHelpers = require.main.require('./src/routes/helpers');
+const meta = nodebb.require('./src/meta');
+const user = nodebb.require('./src/user');
+const groups = nodebb.require('./src/groups');
+const SocketPlugins = nodebb.require('./src/socket.io/plugins');
+const db = nodebb.require('./src/database');
+const plugins = nodebb.require('./src/plugins');
+const routeHelpers = nodebb.require('./src/routes/helpers');
 
 const controllers = require('./lib/controllers');
-const nbbAuthController = require.main.require('./src/controllers/authentication');
+const nbbAuthController = nodebb.require('./src/controllers/authentication');
 const logoutAsync = util.promisify((req, callback) => req.logout(callback));
 
 /* all the user profile fields that can be passed to user.updateProfile */
@@ -262,7 +262,7 @@ plugin.findOrCreateUser = async (userData) => {
 
 plugin.updateUserProfile = async (uid, userData, isNewUser) => {
 	winston.debug('consider updateProfile?', isNewUser || plugin.settings.updateProfile === 'on');
-	let userObj = {};
+	let userObj;
 
 	/* even update the profile on a new account, since some fields are not initialized by NodeBB */
 	if (!isNewUser && plugin.settings.updateProfile !== 'on') {

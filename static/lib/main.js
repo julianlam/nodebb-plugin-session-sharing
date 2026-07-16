@@ -2,9 +2,9 @@
 
 $(document).ready(function () {
 	if (config.sessionSharing && config.sessionSharing.hostWhitelist) {
-		var hosts = config.sessionSharing.hostWhitelist.split(',') || [config.sessionSharing.hostWhitelist];
-		var whitelisted = false;
-		for (var host of hosts) {
+		const hosts = config.sessionSharing.hostWhitelist.split(',') || [config.sessionSharing.hostWhitelist];
+		let whitelisted = false;
+		for (const host of hosts) {
 			if (window && window.location && window.location.host && window.location.host.includes(host)) {
 				whitelisted = true;
 				break;
@@ -57,11 +57,13 @@ $(document).ready(function () {
 		}
 
 		if (ajaxify.data.sessionSharingBan) {
-			bootbox.alert({
-				title: '[[error:user-banned]]',
-				message: ajaxify.data.sessionSharingBan.ban.expiry > 0 ?
-					'[[error:user-banned-reason-until, ' + ajaxify.data.sessionSharingBan.ban.expiry_readable + ', ' + ajaxify.data.sessionSharingBan.ban.reason + ']]' :
-					'[[error:user-banned-reason, ' + ajaxify.data.sessionSharingBan.ban.reason + ']]',
+			require(['modals'], function (modals) {
+				modals.alert({
+					title: '[[error:user-banned]]',
+					message: ajaxify.data.sessionSharingBan.ban.expiry > 0 ?
+						'[[error:user-banned-reason-until, ' + ajaxify.data.sessionSharingBan.ban.expiry_readable + ', ' + ajaxify.data.sessionSharingBan.ban.reason + ']]' :
+						'[[error:user-banned-reason, ' + ajaxify.data.sessionSharingBan.ban.reason + ']]',
+				});
 			});
 		}
 

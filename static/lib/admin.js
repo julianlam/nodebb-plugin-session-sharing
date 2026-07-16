@@ -1,7 +1,7 @@
 'use strict';
 
 define('admin/plugins/session-sharing', ['settings'], function (Settings) {
-	var ACP = {};
+	const ACP = {};
 
 	ACP.init = function () {
 		Settings.load('session-sharing', $('.session-sharing-settings'));
@@ -20,7 +20,7 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 			delete ACP._searchDelay;
 		}
 
-		var element = $(this);
+		const element = $(this);
 
 		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;
@@ -30,7 +30,7 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 				return resultEl.text('');
 			}
 
-			var qs = decodeURIComponent($.param({
+			const qs = decodeURIComponent($.param({
 				query: element.val(),
 			}));
 
@@ -67,7 +67,7 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 			delete ACP._searchDelay;
 		}
 
-		var element = $(this);
+		const element = $(this);
 
 		ACP._searchDelay = setTimeout(function () {
 			delete ACP._searchDelay;

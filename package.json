@@ -24,7 +24,7 @@
   },
   "readmeFilename": "README.md",
   "nbbpm": {
-    "compatibility": "^3.2.0 || ^4.x"
+    "compatibility": "^4.14.0"
   },
   "husky": {
     "hooks": {
@@ -48,8 +48,8 @@
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-angular": "^7.1.2",
-    "eslint": "9.26.0",
-    "eslint-config-nodebb": "^1.1.4",
+    "eslint": "10.7.0",
+    "eslint-config-nodebb": "^2.0.3",
     "husky": "^2.4.0",
     "lint-staged": "^10.0.9",
     "request": "^2.88.2",

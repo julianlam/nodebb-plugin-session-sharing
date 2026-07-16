@@ -10,10 +10,10 @@ const url = require('url');
 const util = require('util');
 const request = require('request-promise-native');
 
-const db = require.main.require('./test/mocks/databasemock');
+const db = nodebb.require('./test/mocks/databasemock');
 
-const nconf = require.main.require('nconf');
-const meta = require.main.require('./src/meta');
+const nconf = nodebb.require('nconf');
+const meta = nodebb.require('./src/meta');
 
 describe('nodebb-plugin-session-sharing', () => {
 	const userJar = request.jar();
