@@ -93,19 +93,27 @@ plugin.appendConfig = async (config) => {
 SocketPlugins.sessionSharing = {};
 
 SocketPlugins.sessionSharing.showUserIds = async (socket, data) => {
-	// Retrieve the hash and find matches
-	const { uids } = data;
-
-	if (!uids.length) {
-		throw new Error('no-uids-supplied');
+	if (!socket.uid || !data || !Array.isArray(data.uids)) {
+		throw new Error('[[error:invalid-data]]');
+	}
+	const isAdmin = await user.isAdministrator(socket.uid);
+	if (!isAdmin) {
+		throw new Error('[[error:no-privileges]]');
 	}
 
 	return Promise.all(
-		uids.map(async uid => db.getSortedSetRangeByScore(plugin.settings.name + ':uid', 0, -1, uid, uid))
+		data.uids.map(uid => db.getSortedSetRangeByScore(`${plugin.settings.name}:uid`, 0, -1, uid, uid))
 	);
 };
 
 SocketPlugins.sessionSharing.findUserByRemoteId = async (socket, data) => {
+	if (!socket.uid || !data || !Array.isArray(data.uids)) {
+		throw new Error('[[error:invalid-data]]');
+	}
+	const isAdmin = await user.isAdministrator(socket.uid);
+	if (!isAdmin) {
+		throw new Error('[[error:no-privileges]]');
+	}
 	if (!data.remoteId) {
 		throw new Error('no-remote-id-supplied');
 	}
