@@ -367,11 +367,19 @@ async function executeJoinLeave(uid, join, leave) {
 }
 
 plugin.createUser = async (userData) => {
-	winston.verbose('[session-sharing] No user found, creating a new user for this login');
+	const count = await db.incrObjectField('locks', `session-sharing-create:${userData.id}`);
+	if (count > 1) {
+		throw new Error('duplicate-creation');
+	}
+	try {
+		winston.verbose('[session-sharing] No user found, creating a new user for this login');
 
-	const uid = await user.create(_.pick(userData, profileFields));
-	await db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id);
-	return uid;
+		const uid = await user.create(_.pick(userData, profileFields));
+		await db.sortedSetAdd(plugin.settings.name + ':uid', uid, userData.id);
+		return uid;
+	} finally {
+		await db.deleteObjectFields('locks', [`session-sharing-create:${userData.id}`]);
+	}
 };
 
 plugin.addMiddleware = async function ({ req, res }) {
@@ -468,6 +476,9 @@ plugin.addMiddleware = async function ({ req, res }) {
 				case 'no-match':
 					winston.info('[session-sharing] Payload valid, but local account not found.  Assuming guest.');
 					handleAsGuest = true;
+					break;
+				case 'duplicate-creation':
+					winston.warn('[session-sharing] Duplicate account creation attempt detected');
 					break;
 				default:
 					winston.warn('[session-sharing] Error encountered while parsing token: ' + error.message);
