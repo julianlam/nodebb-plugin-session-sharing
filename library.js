@@ -455,7 +455,9 @@ plugin.addMiddleware = async function ({ req, res }) {
 			const uid = await plugin.process(req.cookies[plugin.settings.cookieName]);
 			if (uid === req.uid) {
 				winston.verbose(`[session-sharing] Re-validated login for uid ${uid}, path ${req.originalUrl}`);
-				await nbbAuthController.onSuccessfulLogin(req, uid);
+				const wasForceLogin = !!req.session.forceLogin;
+				delete req.session.forceLogin;
+				await nbbAuthController.onSuccessfulLogin(req, uid, true, wasForceLogin);
 				return;
 			}
 
