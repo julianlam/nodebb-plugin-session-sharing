@@ -458,6 +458,11 @@ plugin.addMiddleware = async function ({ req, res }) {
 				const wasForceLogin = !!req.session.forceLogin;
 				delete req.session.forceLogin;
 				await nbbAuthController.onSuccessfulLogin(req, uid, true, wasForceLogin);
+				if (wasForceLogin && req.session.returnTo) {
+					const url = req.session.returnTo;
+					delete req.session.returnTo;
+					res.redirect(nconf.get('relative_path') + url);
+				}
 				return;
 			}
 
