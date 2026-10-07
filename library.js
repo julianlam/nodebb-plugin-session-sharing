@@ -137,7 +137,7 @@ plugin.getUser = async (remoteId) => {
 };
 
 plugin.process = async (token) => {
-	const payload = await jwt.verify(token, plugin.settings.secret);
+	const payload = await jwt.verify(token, plugin.settings.secret, { algorithms: ['HS256', 'HS384', 'HS512'] });
 	const userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
 	await plugin.updateUserProfile(uid, userData, isNewUser);
