@@ -6,12 +6,28 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 	ACP.init = function () {
 		Settings.load('session-sharing', $('.session-sharing-settings'));
 
+		ACP.toggleSigningFields();
+		$('#signingMethod').on('change', ACP.toggleSigningFields);
+
 		$('#save').on('click', function () {
 			Settings.save('session-sharing', $('.session-sharing-settings'));
 		});
 
 		$('#search').on('keyup', ACP.showUserId);
 		$('#remote_search').on('keyup', ACP.findUserByRemoteId);
+	};
+
+	ACP.toggleSigningFields = function () {
+		const method = $('#signingMethod').val() || 'hmac';
+		if (method === 'rsa') {
+			$('#hmac-fields').hide();
+			$('#rsa-fields').show();
+			$('#rsa-sign-fields').show();
+		} else {
+			$('#hmac-fields').show();
+			$('#rsa-fields').hide();
+			$('#rsa-sign-fields').hide();
+		}
 	};
 
 	ACP.showUserId = function () {

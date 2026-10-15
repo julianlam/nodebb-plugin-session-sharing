@@ -47,6 +47,9 @@ const plugin = {
 		cookieName: 'token',
 		cookieDomain: undefined,
 		secret: '',
+		signingMethod: 'hmac',
+		publicKey: '',
+		privateKey: '',
 		behaviour: 'trust',
 		adminRevalidate: 'off',
 		noRegistration: 'off',
@@ -136,8 +139,46 @@ plugin.getUser = async (remoteId) => {
 	return user.getUserFields(uid, ['username', 'userslug', 'picture']);
 };
 
+plugin.verifyToken = (token) => {
+	const { header } = jwt.decode(token, { complete: true });
+	if (!header) {
+		throw new Error('payload-invalid');
+	}
+
+	let key;
+	let algorithms;
+
+	if (header.alg === 'RS256') {
+		if (!plugin.settings.publicKey) {
+			throw new Error('payload-invalid');
+		}
+		key = plugin.settings.publicKey;
+		algorithms = ['RS256'];
+	} else if (header.alg === 'HS256') {
+		if (!plugin.settings.secret) {
+			throw new Error('payload-invalid');
+		}
+		key = plugin.settings.secret;
+		algorithms = ['HS256'];
+	} else {
+		throw new Error('payload-invalid');
+	}
+
+	return jwt.verify(token, key, { algorithms });
+};
+
+plugin.getSignOptions = () => {
+	if (plugin.settings.signingMethod === 'rsa') {
+		if (!plugin.settings.privateKey) {
+			throw new Error('No RSA private key configured');
+		}
+		return { key: plugin.settings.privateKey, options: { algorithm: 'RS256' } };
+	}
+	return { key: plugin.settings.secret, options: { algorithm: 'HS256' } };
+};
+
 plugin.process = async (token) => {
-	const payload = await jwt.verify(token, plugin.settings.secret, { algorithms: ['HS256'] });
+	const payload = plugin.verifyToken(token);
 	const userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
 	await plugin.updateUserProfile(uid, userData, isNewUser);
@@ -568,7 +609,8 @@ plugin.generate = function (req, res) {
 		payload = newPayload;
 	}
 
-	const token = jwt.sign(payload, plugin.settings.secret);
+	const { key, options } = plugin.getSignOptions();
+	const token = jwt.sign(payload, key, options);
 	res.cookie(plugin.settings.cookieName, token, {
 		maxAge: 1000 * 60 * 60 * 24 * 21,
 		httpOnly: true,
@@ -595,7 +637,13 @@ plugin.reloadSettings = async (data) => {
 	}
 
 	const settings = await meta.settings.get('session-sharing');
-	if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
+	const signingMethod = settings.signingMethod || 'hmac';
+	if (signingMethod === 'rsa') {
+		if (!settings.publicKey || !settings.publicKey.length) {
+			winston.error('[session-sharing] RSA public key not found, session sharing disabled.');
+			return;
+		}
+	} else if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
 		winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
 		return;
 	}
@@ -641,7 +689,8 @@ plugin.saveReverseToken = async ({ req, userData: data }) => {
 	const { res } = req;
 	const userData = await user.getUserFields(data.uid, ['uid', 'username', 'picture', 'reputation', 'postcount', 'banned']);
 	userData.groups = (await groups.getUserGroups([data.uid])).pop();
-	const token = jwt.sign(userData, plugin.settings.secret);
+	const { key, options } = plugin.getSignOptions();
+	const token = jwt.sign(userData, key, options);
 
 	res.cookie('nbb_token', token, {
 		maxAge: meta.getSessionTTLSeconds() * 1000,

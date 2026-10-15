@@ -25,12 +25,37 @@
 						</p>
 					</div>
 					<div class="mb-3">
+						<label class="form-label" for="signingMethod">Signing Method</label>
+						<select class="form-control" id="signingMethod" name="signingMethod">
+							<option value="hmac">HMAC (symmetric shared secret)</option>
+							<option value="rsa">RSA (asymmetric key pair)</option>
+						</select>
+						<p class="form-text">
+							HMAC uses a shared secret known to both parties. RSA uses an asymmetric key pair where only the
+							issuing server can sign, but any holder of the public key can verify.
+						</p>
+					</div>
+					<div class="mb-3" id="hmac-fields">
 						<label class="form-label" for="secret">JWT Secret</label>
 						<input type="text" id="secret" name="secret" title="JWT Secret" class="form-control" />
 						<p class="form-text">
 							This value is the secret key you used to encode your JSON Web Token. NodeBB needs the same secret
 							otherwise the JWT cannot be properly decoded.
 						</p>
+					</div>
+					<div class="mb-3" id="rsa-fields" style="display: none;">
+						<label class="form-label" for="publicKey">RSA Public Key</label>
+						<textarea id="publicKey" name="publicKey" title="RSA Public Key" class="form-control" rows="5" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
+						<p class="form-text">
+							The public key used to verify JWT signatures. This key is shared with clients so they can verify tokens.
+						</p>
+					</div>
+					<div class="mb-3" id="rsa-sign-fields" style="display: none;">
+						<label class="form-label" for="privateKey">RSA Private Key</label>
+						<textarea id="privateKey" name="privateKey" title="RSA Private Key" class="form-control" rows="5" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
+						<p class="form-text">
+							The private key used to sign reverse tokens (if enabled). Keep this secret — only the issuing server should have access.
+					</p>
 					</div>
 					<div class="mb-3">
 						<label class="form-label" for="hostWhitelist">Host Whitelist</label>
