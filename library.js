@@ -386,10 +386,15 @@ plugin.addMiddleware = async function ({ req, res }) {
 	const { hostWhitelist, guestRedirect, editOverride, loginOverride, registerOverride } = await meta.settings.get('session-sharing');
 
 	if (hostWhitelist) {
+		const hostHeader = req.headers.host;
+		if (!hostHeader) {
+			return;
+		}
+
 		const hosts = hostWhitelist.split(',') || [hostWhitelist];
 		let whitelisted = false;
 		for (const host of hosts) {
-			if (req.headers.host.includes(host)) {
+			if (hostHeader.includes(host)) {
 				whitelisted = true;
 				break;
 			}
