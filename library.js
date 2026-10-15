@@ -567,13 +567,11 @@ plugin.addMiddleware = async function ({ req, res }) {
 };
 
 plugin.cleanup = async (data) => {
-	if (plugin.settings.cookieDomain) {
-		winston.verbose('[session-sharing] Clearing cookie');
-		data.res.clearCookie(plugin.settings.cookieName, {
-			domain: plugin.settings.cookieDomain,
-			path: '/',
-		});
-	}
+	winston.verbose('[session-sharing] Clearing cookie');
+	data.res.clearCookie(plugin.settings.cookieName, {
+		domain: plugin.settings.cookieDomain,
+		path: '/',
+	});
 
 	data.res.clearCookie('nbb_token', {
 		domain: plugin.settings.cookieDomain,
