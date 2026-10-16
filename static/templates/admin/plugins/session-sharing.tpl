@@ -25,6 +25,16 @@
 						</p>
 					</div>
 					<div class="mb-3">
+						<label class="form-label" for="hostWhitelist">Host Whitelist</label>
+						<input type="text" id="hostWhitelist" name="hostWhitelist" title="Host Whitelist" class="form-control" placeholder="localhost" />
+						<p class="form-text">
+							If set, session-sharing plugin works only on whitelisted domains. Separate with commas, for example: "localhost,test.domain.com".
+						</p>
+					</div>
+
+					<h5 class="fw-bold tracking-tight settings-header">Token Settings</h5>
+
+					<div class="mb-3">
 						<label class="form-label" for="signingMethod">Signing Method</label>
 						<select class="form-control" id="signingMethod" name="signingMethod">
 							<option value="hmac">HMAC (symmetric shared secret)</option>
@@ -33,6 +43,23 @@
 						<p class="form-text">
 							HMAC uses a shared secret known to both parties. RSA uses an asymmetric key pair where only the
 							issuing server can sign, but any holder of the public key can verify.
+						</p>
+					</div>
+					<div class="mb-3">
+						<label class="form-label" for="tokenFormat">Token Format</label>
+						<select class="form-control" id="tokenFormat" name="tokenFormat">
+							<option value="jws">JWS (signed JWT)</option>
+							<option value="jwe">JWE (encrypted JWT)</option>
+						</select>
+						<p class="form-text">
+							JWS tokens are digitally signed: their payload is base64url-encoded and readable by anyone, but
+							tamper-proof. JWE tokens are encrypted: the payload is confidential and only decryptable with the
+							corresponding key. This setting controls the format of tokens <em>generated</em> by NodeBB (the
+							<code>nbb_token</code> reverse cookie and the development debug token).
+						</p>
+						<p class="form-text">
+							Incoming cookies are auto-detected, so <strong>both</strong> JWS and JWE tokens are accepted
+							regardless of this setting.
 						</p>
 					</div>
 					<div class="mb-3" id="hmac-fields">
@@ -54,15 +81,8 @@
 						<label class="form-label" for="privateKey">RSA Private Key</label>
 						<textarea id="privateKey" name="privateKey" title="RSA Private Key" class="form-control" rows="5" placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"></textarea>
 						<p class="form-text">
-							The private key used to sign reverse tokens (if enabled). Keep this secret — only the issuing server should have access.
+							The private key used to sign reverse tokens (if enabled), and to decrypt JWE (encrypted) cookies. Keep this secret — only the issuing server should have access to it.
 					</p>
-					</div>
-					<div class="mb-3">
-						<label class="form-label" for="hostWhitelist">Host Whitelist</label>
-						<input type="text" id="hostWhitelist" name="hostWhitelist" title="Host Whitelist" class="form-control" placeholder="localhost" />
-						<p class="form-text">
-							If set, session-sharing plugin works only on whitelisted domains. Separate with commas, for example: "localhost,test.domain.com".
-						</p>
 					</div>
 				</div>
 

@@ -4,9 +4,9 @@ define('admin/plugins/session-sharing', ['settings'], function (Settings) {
 	const ACP = {};
 
 	ACP.init = function () {
-		Settings.load('session-sharing', $('.session-sharing-settings'));
-
-		ACP.toggleSigningFields();
+		// Settings.load is async: only toggle field visibility once the saved
+		// signingMethod value has been populated into the form.
+		Settings.load('session-sharing', $('.session-sharing-settings'), ACP.toggleSigningFields);
 		$('#signingMethod').on('change', ACP.toggleSigningFields);
 
 		$('#save').on('click', function () {

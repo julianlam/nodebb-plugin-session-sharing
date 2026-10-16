@@ -1,8 +1,8 @@
 # Session Sharing for NodeBB
 
 In a nutshell, this plugin allows you to share sessions between your application and NodeBB. You'll need to set a
-special cookie with a common domain, containing a JSON Web Token with user data. If sufficient, this plugin will
-handle the rest (user registration/login).
+special cookie with a common domain, containing a JSON Web Token (signed, or encrypted) with user data. If
+sufficient, this plugin will handle the rest (user registration/login).
 
 ## How is this related to SSO?
 
@@ -21,8 +21,8 @@ You can use this plugin and single sign-on plugins together, but they won't be s
 ## How does this work?
 
 This plugin checks incoming requests for a **shared cookie** that is saved by your application when a user
-logs in. This cookie contains in its value, a specially crafted signed token containing unique identifying
-information for that user.
+logs in. This cookie contains in its value, a specially crafted signed (JWS) or encrypted (JWE) token
+containing unique identifying information for that user.
 
 If the user can be found in NodeBB, that user will be logged in. If not, then a user is created, and that
 unique indentifier is saved for future reference.
@@ -36,9 +36,12 @@ to have a couple special attributes:
 * The `domain` should be set to the naked domain. That is, if your site is at `app.example.com`, and your
 forum is at `talk.example.com`, the cookie domain should be set to `example.com`.
 * The cookie name is up to you, and can be configured in this plugin's settings. *(Default: `token`)*
-* The cookie value is a [JSON Web Token](https://jwt.io/). See below.
+* The cookie value is a [JSON Web Token](https://jwt.io/) — signed (JWS) or encrypted (JWE). See below.
 
 ### Generating the JSON Web Token
+
+The steps below describe the default **JWS** format; if you've switched the plugin to **JWE**, see
+[Token Format (JWS / JWE)](#token-format-jws--jwe) instead.
 
 A list of compatible libraries can be obtained on the main website for [JSON Web Tokens](https://jwt.io/).
 
@@ -87,14 +90,66 @@ it can properly decode and verify the JWT signature.
 
 In which case, you can set the "Parent Key" setting in this plugin to `d`.
 
+### Token Format (JWS / JWE)
+
+By default the shared cookie is a **JWS** (signed) JWT. The **Token Format** setting in the admin panel
+allows switching to **JWE** (encrypted) JWTs, in which case the payload is confidential and only decryptable
+with the corresponding key, so its contents are not visible in the cookie.
+
+This setting controls the format of tokens *generated* by NodeBB (the `nbb_token` reverse cookie and the
+development debug token). **Incoming cookies are auto-detected by their structure** (a JWS has 3
+dot-separated segments, a JWE has 5), so *both* formats are accepted regardless of the setting. This allows
+a gradual migration: flip the setting, then switch your application over to issuing JWE cookies at your own
+pace — users with cookies in either format will continue to log in throughout the transition.
+
+Tokens are created and verified with [`jose`](https://github.com/panva/jose). When issuing JWE cookies from
+your application, use the following parameters:
+
+| Signing method | `alg` | `enc` | Key |
+| --- | --- | --- | --- |
+| HMAC | `dir` | `A256GCM` | HKDF-derived from your shared secret (see below) |
+| RSA | `RSA-OAEP-256` | `A256GCM` | The RSA **public** key |
+
+**HMAC key derivation** — JWE's `dir` key method requires the key to be exactly 32 bytes, so
+arbitrary-length shared secrets cannot be used directly. NodeBB derives the JWE key with HKDF-SHA256:
+
+```
+HKDF(
+	ikm:	<your shared secret>,
+	salt:	"nodebb-plugin-session-sharing",
+	info:	"A256GCM",
+	length:	32
+)
+```
+
+Your application must perform the same derivation before encrypting. JWS is unaffected — `HS256` signing
+uses the raw secret as-is, so existing JWS setups keep working unchanged.
+
+**RSA key direction** — note that JWE inverts the key direction of JWS: your application *encrypts* with the
+RSA **public** key, and NodeBB *decrypts* with the RSA **private** key. If you use JWE with the RSA signing
+method, make sure the **RSA Private Key** is configured in the admin settings — without it, encrypted cookies
+cannot be decrypted (a warning is logged at startup).
+
+The `nbb_token` reverse cookie follows the same Token Format setting. If your application reads the reverse
+token, it must be able to decrypt JWE when this setting is enabled.
+
 ## Security
 
-Please note that according to the JWT spec, the payload itself is ***not encrypted***, only *signed*. That is,
+Please note that according to the JWT spec, a JWS payload is ***not encrypted***, only *signed*. That is,
 the Base64 Url Encoded payload is appended to the header. It can be decoded trivially (as base64 is not meant
-to be cryptographically secure), so **do not put any private information in the payload**. The header and
-payload themselves are *signed* against the secret, and NodeBB will only allow a JWT through if it has not been
-tampered with. That is, NodeBB will only continue with a login if the signature can be independently generated
-by the received payload and the secret.
+to be cryptographically secure), so **do not put any private information in the payload** of a JWS token. The
+header and payload themselves are *signed* against the secret, and NodeBB will only allow a JWT through if it
+has not been tampered with. That is, NodeBB will only continue with a login if the signature can be
+independently generated by the received payload and the secret.
+
+**Mitigating payload exposure with JWE** — if the exposure above is a concern for your setup (for example,
+your payload includes an `email` or `groups` you'd rather not be visible in a cookie, or you cannot guarantee
+HTTPS end-to-end), switch the **Token Format** setting to JWE (see
+[Token Format (JWS / JWE)](#token-format-jws--jwe)). A JWE token *encrypts* the payload — with `A256GCM` in
+this plugin — so the identifying information is not visible in the cookie at all, and can only be decrypted by
+NodeBB with the corresponding key. Note that JWE protects the payload's *confidentiality*; the token is still
+only as trustworthy as the key or secret it was sealed with, and a stolen private key (or shared secret) can
+still mint valid tokens — the rest of this section applies to both formats.
 
 Use secure cookies transmitted via HTTPS if at all possible.
 

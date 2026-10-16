@@ -4,9 +4,10 @@ const winston = nodebb.require('winston');
 const nconf = nodebb.require('nconf');
 
 const util = require('util');
+const crypto = require('crypto');
 
 const _ = require('lodash');
-const jwt = require('jsonwebtoken');
+const { jwtVerify, jwtDecrypt, SignJWT, EncryptJWT } = require('jose');
 
 const meta = nodebb.require('./src/meta');
 const user = nodebb.require('./src/user');
@@ -48,6 +49,7 @@ const plugin = {
 		cookieDomain: undefined,
 		secret: '',
 		signingMethod: 'hmac',
+		tokenFormat: 'jws',
 		publicKey: '',
 		privateKey: '',
 		behaviour: 'trust',
@@ -139,46 +141,93 @@ plugin.getUser = async (remoteId) => {
 	return user.getUserFields(uid, ['username', 'userslug', 'picture']);
 };
 
-plugin.verifyToken = (token) => {
-	const { header } = jwt.decode(token, { complete: true });
-	if (!header) {
-		throw new Error('payload-invalid');
-	}
+/*
+ * JWE with a symmetric key ("dir" key method) requires the key to be exactly
+ * the length of the content encryption key (32 bytes for A256GCM). Shared
+ * secrets are arbitrary-length, so derive a fixed-length key with HKDF.
+ * Apps issuing JWE cookies must perform the same derivation.
+ */
+const JWE_HKDF_SALT = 'nodebb-plugin-session-sharing';
+const JWE_HKDF_INFO = 'A256GCM';
 
-	let key;
-	let algorithms;
-
-	if (header.alg === 'RS256') {
-		if (!plugin.settings.publicKey) {
-			throw new Error('payload-invalid');
+plugin.getJwsKey = (isPrivate) => {
+	if (plugin.settings.signingMethod === 'rsa') {
+		const pem = isPrivate ? plugin.settings.privateKey : plugin.settings.publicKey;
+		if (!pem) {
+			throw new Error(isPrivate ? 'No RSA private key configured' : 'No RSA public key configured');
 		}
-		key = plugin.settings.publicKey;
-		algorithms = ['RS256'];
-	} else if (header.alg === 'HS256') {
-		if (!plugin.settings.secret) {
-			throw new Error('payload-invalid');
-		}
-		key = plugin.settings.secret;
-		algorithms = ['HS256'];
-	} else {
-		throw new Error('payload-invalid');
+		// jose v6 expects a KeyObject, not a PEM string
+		return isPrivate ? crypto.createPrivateKey(pem) : crypto.createPublicKey(pem);
 	}
-
-	return jwt.verify(token, key, { algorithms });
+	if (!plugin.settings.secret) {
+		throw new Error('No JWT secret configured');
+	}
+	return crypto.createSecretKey(plugin.settings.secret, 'utf8');
 };
 
-plugin.getSignOptions = () => {
+/*
+ * Note the key direction differs from JWS: JWE is encrypted with the public
+ * key and decrypted with the private key, so verifying an incoming JWE
+ * cookie requires the RSA private key.
+ */
+plugin.getJweKey = (isDecryption) => {
 	if (plugin.settings.signingMethod === 'rsa') {
-		if (!plugin.settings.privateKey) {
-			throw new Error('No RSA private key configured');
-		}
-		return { key: plugin.settings.privateKey, options: { algorithm: 'RS256' } };
+		return plugin.getJwsKey(isDecryption);
 	}
-	return { key: plugin.settings.secret, options: { algorithm: 'HS256' } };
+	if (!plugin.settings.secret) {
+		throw new Error('No JWT secret configured');
+	}
+	// jose expects a Uint8Array (not a Node Buffer) for symmetric JWE keys
+	return new Uint8Array(crypto.hkdfSync('sha256', plugin.settings.secret, JWE_HKDF_SALT, JWE_HKDF_INFO, 32));
+};
+
+/*
+ * Verifies an incoming token, accepting both JWS (3 segments) and JWE
+ * (5 segments) so that installs can migrate between the two formats
+ * without a hard cutover. Key selection is driven by the configured
+ * signing method, not the token header.
+ */
+plugin.verifyToken = async (token) => {
+	if (typeof token !== 'string' || !token.length) {
+		throw new Error('payload-invalid');
+	}
+
+	const isJWE = token.split('.').length === 5;
+
+	try {
+		if (isJWE) {
+			const { payload } = await jwtDecrypt(token, plugin.getJweKey(true), {
+				algorithms: plugin.settings.signingMethod === 'rsa' ? ['RSA-OAEP-256'] : ['dir'],
+			});
+			return payload; // already JSON-parsed by jose
+		}
+
+		const { payload } = await jwtVerify(token, plugin.getJwsKey(false), {
+			algorithms: plugin.settings.signingMethod === 'rsa' ? ['RS256'] : ['HS256'],
+		});
+		return payload;
+	} catch (error) {
+		throw new Error('payload-invalid', { cause: error });
+	}
+};
+
+/* Creates a JWS or JWE token according to the configured token format */
+plugin.createToken = async (payload) => {
+	if (plugin.settings.tokenFormat === 'jwe') {
+		const encrypted = new EncryptJWT(payload).setProtectedHeader(
+			plugin.settings.signingMethod === 'rsa' ? { alg: 'RSA-OAEP-256', enc: 'A256GCM' } : { alg: 'dir', enc: 'A256GCM' }
+		);
+		return encrypted.encrypt(plugin.getJweKey(false));
+	}
+
+	const signed = new SignJWT(payload).setProtectedHeader({
+		alg: plugin.settings.signingMethod === 'rsa' ? 'RS256' : 'HS256',
+	});
+	return signed.sign(plugin.getJwsKey(true));
 };
 
 plugin.process = async (token) => {
-	const payload = plugin.verifyToken(token);
+	const payload = await plugin.verifyToken(token);
 	const userData = await plugin.normalizePayload(payload);
 	const [uid, isNewUser] = await plugin.findOrCreateUser(userData);
 	await plugin.updateUserProfile(uid, userData, isNewUser);
@@ -581,7 +630,7 @@ plugin.cleanup = async (data) => {
 	return true;
 };
 
-plugin.generate = function (req, res) {
+plugin.generate = async function (req, res) {
 	if (!plugin.ready) {
 		return res.sendStatus(404);
 	}
@@ -607,8 +656,7 @@ plugin.generate = function (req, res) {
 		payload = newPayload;
 	}
 
-	const { key, options } = plugin.getSignOptions();
-	const token = jwt.sign(payload, key, options);
+	const token = await plugin.createToken(payload);
 	res.cookie(plugin.settings.cookieName, token, {
 		maxAge: 1000 * 60 * 60 * 24 * 21,
 		httpOnly: true,
@@ -636,6 +684,11 @@ plugin.reloadSettings = async (data) => {
 
 	const settings = await meta.settings.get('session-sharing');
 	const signingMethod = settings.signingMethod || 'hmac';
+	const tokenFormat = settings.tokenFormat || 'jws';
+	if (tokenFormat !== 'jws' && tokenFormat !== 'jwe') {
+		winston.error('[session-sharing] Invalid token format ("' + tokenFormat + '"), session sharing disabled.');
+		return;
+	}
 	if (signingMethod === 'rsa') {
 		if (!settings.publicKey || !settings.publicKey.length) {
 			winston.error('[session-sharing] RSA public key not found, session sharing disabled.');
@@ -644,6 +697,9 @@ plugin.reloadSettings = async (data) => {
 	} else if (!settings.hasOwnProperty('secret') || !settings.secret.length) {
 		winston.error('[session-sharing] JWT Secret not found, session sharing disabled.');
 		return;
+	}
+	if (signingMethod === 'rsa' && (!settings.privateKey || !settings.privateKey.length)) {
+		winston.warn('[session-sharing] RSA private key not configured; JWE (encrypted) cookies cannot be decrypted and reverse tokens cannot be signed.');
 	}
 
 	// If "payload:parent" is found, but payloadParent is not, update the latter and delete the former
@@ -687,8 +743,7 @@ plugin.saveReverseToken = async ({ req, userData: data }) => {
 	const { res } = req;
 	const userData = await user.getUserFields(data.uid, ['uid', 'username', 'picture', 'reputation', 'postcount', 'banned']);
 	userData.groups = (await groups.getUserGroups([data.uid])).pop();
-	const { key, options } = plugin.getSignOptions();
-	const token = jwt.sign(userData, key, options);
+	const token = await plugin.createToken(userData);
 
 	res.cookie('nbb_token', token, {
 		maxAge: meta.getSessionTTLSeconds() * 1000,
